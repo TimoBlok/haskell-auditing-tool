@@ -1,8 +1,8 @@
 cabal-version: >= 2.0
 version: 1.0.20231030
 name:       haskell-permission-tool
-synopsis:   Script to find cross-module declaration cycles
-author:     Lawrence Chonavel
+synopsis:   
+author:     Timo Blok
 build-type: Simple
 
 executable haskell-permission-tool
@@ -18,7 +18,4 @@ executable haskell-permission-tool
     , interpolatedstring-perl6
     , optparse-applicative
     , text
-  extra-source-files:
-      style.css
-    , controller.js
 

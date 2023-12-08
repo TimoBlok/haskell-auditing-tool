@@ -34,3 +34,7 @@ After this completes, `nix run` will be instant for those versions.
 ## Development
 
 `nix build .#ghcXXX` type-checks & compiles with GHC version XXX
+
+## Special thanks
+
+Special thanks to Lawrence Chonavel for letting me use his project as a template.
