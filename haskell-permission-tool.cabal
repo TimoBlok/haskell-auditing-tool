@@ -1,0 +1,24 @@
+cabal-version: >= 2.0
+version: 1.0.20231030
+name:       haskell-permission-tool
+synopsis:   Script to find cross-module declaration cycles
+author:     Lawrence Chonavel
+build-type: Simple
+
+executable haskell-permission-tool
+  main-is:          Main.hs
+  default-language: Haskell2010
+  build-depends:
+      aeson
+    , algebraic-graphs
+    , base
+    , containers
+    , file-embed
+    , hiedb < 0.4.4
+    , interpolatedstring-perl6
+    , optparse-applicative
+    , text
+  extra-source-files:
+      style.css
+    , controller.js
+
