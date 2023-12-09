@@ -56,7 +56,7 @@ parseOpts = Options
         <>  showDefault
         <>  value "default-input/"
         )
-data Options = Options {hieDir :: FilePath, dbFile :: FilePath, blacklistFile :: FilePath}
+data Options = Options {hieDir :: FilePath, dbFile :: FilePath, outDir :: FilePath}
 
 main :: IO ()
 main = do
@@ -83,7 +83,7 @@ getOrCreateGraph hieDir db = do
     g0 <- getGraph db
     if g0 /= AdjacencyMap.empty then return g0 else do
         putStrLn $ "Graph empty, loading hiefiles from " ++ show hieDir
-        hiefiles <- getHie FilesIn hieDir
+        hiefiles <- getHieFilesIn hieDir
         when (hiefiles == []) $ putStrLn "No hiefiles found, run `make type-check-no-deps`"
         ncr <- newIORef =<< makeNc
         runDbM ncr $ addRefsFrom db `mapM_` hiefiles
