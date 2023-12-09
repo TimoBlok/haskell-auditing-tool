@@ -1,0 +1,143 @@
+Prelude ioError :: IOError -> IO a
+Control.Exception ioError :: IOError -> IO a
+Control.Exception.Base ioError :: IOError -> IO a
+System.IO.Error ioError :: IOError -> IO a
+GHC.Conc ioManagerCapabilitiesChanged :: IO ()
+GHC.Conc.IO ioManagerCapabilitiesChanged :: IO ()
+GHC.IO ioToST :: IO a -> ST RealWorld a
+GHC.IO.Exception ioError :: IOError -> IO a
+GHC.IO.Exception ioException :: IOException -> IO a
+GHC.IO.Handle.Internals ioe_EOF :: IO a
+GHC.IO.Handle.Internals ioe_bufsiz :: Int -> IO a
+GHC.IO.Handle.Internals ioe_closedHandle :: IO a
+GHC.IO.Handle.Internals ioe_finalizedHandle :: FilePath -> Handle__
+GHC.IO.Handle.Internals ioe_notReadable :: IO a
+GHC.IO.Handle.Internals ioe_notWritable :: IO a
+GHC.IO.Handle.Internals ioe_semiclosedHandle :: IO a
+Prelude readIO :: Read a => String -> IO a
+Control.Concurrent forkIO :: IO () -> IO ThreadId
+Control.Concurrent forkIOWithUnmask :: ((forall a . () => IO a -> IO a) -> IO ()) -> IO ThreadId
+Control.Exception onException :: IO a -> IO b -> IO a
+Control.Exception throwIO :: Exception e => e -> IO a
+Control.Exception.Base onException :: IO a -> IO b -> IO a
+Control.Exception.Base throwIO :: Exception e => e -> IO a
+Control.Monad.IO.Class liftIO :: MonadIO m => IO a -> m a
+Control.Monad.ST stToIO :: ST RealWorld a -> IO a
+Control.Monad.ST.Lazy stToIO :: ST RealWorld a -> IO a
+Control.Monad.ST.Lazy.Safe stToIO :: ST RealWorld a -> IO a
+Control.Monad.ST.Lazy.Unsafe unsafeIOToST :: IO a -> ST s a
+Control.Monad.ST.Safe stToIO :: ST RealWorld a -> IO a
+Control.Monad.ST.Unsafe unsafeIOToST :: IO a -> ST s a
+Control.Monad.ST.Unsafe unsafeSTToIO :: ST s a -> IO a
+Data.IORef atomicModifyIORef :: IORef a -> (a -> (a, b)) -> IO b
+Data.IORef atomicModifyIORef' :: IORef a -> (a -> (a, b)) -> IO b
+Data.IORef atomicWriteIORef :: IORef a -> a -> IO ()
+Data.IORef mkWeakIORef :: IORef a -> IO () -> IO (Weak (IORef a))
+Data.IORef modifyIORef :: IORef a -> (a -> a) -> IO ()
+Data.IORef modifyIORef' :: IORef a -> (a -> a) -> IO ()
+Data.IORef newIORef :: a -> IO (IORef a)
+Data.IORef readIORef :: IORef a -> IO a
+Data.IORef writeIORef :: IORef a -> a -> IO ()
+Debug.Trace traceEventIO :: String -> IO ()
+Debug.Trace traceIO :: String -> IO ()
+Debug.Trace traceMarkerIO :: String -> IO ()
+System.IO fixIO :: (a -> IO a) -> IO a
+System.IO openBinaryTempFileWithDefaultPermissions :: FilePath -> String -> IO (FilePath, Handle)
+System.IO openTempFileWithDefaultPermissions :: FilePath -> String -> IO (FilePath, Handle)
+System.IO readIO :: Read a => String -> IO a
+System.IO.Error catchIOError :: IO a -> (IOError -> IO a) -> IO a
+System.IO.Error modifyIOError :: (IOError -> IOError) -> IO a -> IO a
+System.IO.Error tryIOError :: IO a -> IO (Either IOError a)
+System.IO.Unsafe unsafeDupablePerformIO :: IO a -> a
+System.IO.Unsafe unsafeFixIO :: (a -> IO a) -> IO a
+System.IO.Unsafe unsafeInterleaveIO :: IO a -> IO a
+System.IO.Unsafe unsafePerformIO :: IO a -> a
+System.Mem disableAllocationLimit :: IO ()
+System.Mem enableAllocationLimit :: IO ()
+System.Mem getAllocationCounter :: IO Int64
+System.Mem setAllocationCounter :: Int64 -> IO ()
+System.Mem.Weak getFinalizerExceptionHandler :: IO (SomeException -> IO ())
+System.Mem.Weak printToHandleFinalizerExceptionHandler :: Handle -> SomeException -> IO ()
+System.Mem.Weak setFinalizerExceptionHandler :: (SomeException -> IO ()) -> IO ()
+System.Posix.Internals checkForInteriorNuls :: FilePath -> CStringLen -> IO ()
+System.Posix.Internals get_saved_termios :: CInt -> IO (Ptr CTermios)
+System.Posix.Internals set_saved_termios :: CInt -> Ptr CTermios -> IO ()
+GHC.Base bindIO :: IO a -> (a -> IO b) -> IO b
+GHC.Base failIO :: String -> IO a
+GHC.Base returnIO :: a -> IO a
+GHC.Base thenIO :: IO a -> IO b -> IO b
+GHC.Base unIO :: IO a -> State# RealWorld -> (# State# RealWorld, a #)
+GHC.Conc disableAllocationLimit :: IO ()
+GHC.Conc enableAllocationLimit :: IO ()
+GHC.Conc ensureIOManagerIsRunning :: IO ()
+GHC.Conc forkIO :: IO () -> IO ThreadId
+GHC.Conc forkIOWithUnmask :: ((forall a . () => IO a -> IO a) -> IO ()) -> IO ThreadId
+GHC.Conc getAllocationCounter :: IO Int64
+GHC.Conc getUncaughtExceptionHandler :: IO (SomeException -> IO ())
+GHC.Conc newTVarIO :: a -> IO (TVar a)
+GHC.Conc readTVarIO :: TVar a -> IO a
+GHC.Conc setAllocationCounter :: Int64 -> IO ()
+GHC.Conc setUncaughtExceptionHandler :: (SomeException -> IO ()) -> IO ()
+GHC.Conc unsafeIOToSTM :: IO a -> STM a
+GHC.Conc.IO ensureIOManagerIsRunning :: IO ()
+GHC.Conc.IO interruptIOManager :: IO ()
+GHC.Conc.Sync disableAllocationLimit :: IO ()
+GHC.Conc.Sync enableAllocationLimit :: IO ()
+GHC.Conc.Sync forkIO :: IO () -> IO ThreadId
+GHC.Conc.Sync forkIOWithUnmask :: ((forall a . () => IO a -> IO a) -> IO ()) -> IO ThreadId
+GHC.Conc.Sync getAllocationCounter :: IO Int64
+GHC.Conc.Sync getUncaughtExceptionHandler :: IO (SomeException -> IO ())
+GHC.Conc.Sync newTVarIO :: a -> IO (TVar a)
+GHC.Conc.Sync readTVarIO :: TVar a -> IO a
+GHC.Conc.Sync setAllocationCounter :: Int64 -> IO ()
+GHC.Conc.Sync setUncaughtExceptionHandler :: (SomeException -> IO ()) -> IO ()
+GHC.Conc.Sync unsafeIOToSTM :: IO a -> STM a
+GHC.Exts setThreadAllocationCounter# :: Int64# -> State# RealWorld -> State# RealWorld
+GHC.GHCi ghciStepIO :: GHCiSandboxIO m => m a -> IO a
+GHC.IO catchException :: Exception e => IO a -> (e -> IO a) -> IO a
+GHC.IO liftIO :: IO a -> State# RealWorld -> STret RealWorld a
+GHC.IO mplusIO :: IO a -> IO a -> IO a
+GHC.IO onException :: IO a -> IO b -> IO a
+GHC.IO stToIO :: ST RealWorld a -> IO a
+GHC.IO throwIO :: Exception e => e -> IO a
+GHC.IO unIO :: IO a -> State# RealWorld -> (# State# RealWorld, a #)
+GHC.IO unsafeDupableInterleaveIO :: IO a -> IO a
+GHC.IO unsafeDupablePerformIO :: IO a -> a
+GHC.IO unsafeIOToST :: IO a -> ST s a
+GHC.IO unsafeInterleaveIO :: IO a -> IO a
+GHC.IO unsafePerformIO :: IO a -> a
+GHC.IO unsafeSTToIO :: ST s a -> IO a
+GHC.IO.Handle.Internals debugIO :: String -> IO ()
+GHC.IO.Handle.Internals traceIO :: String -> IO ()
+GHC.IO.SubSystem whenIoSubSystem :: IoSubSystem -> IO () -> IO ()
+GHC.IO.SubSystem withIoSubSystem :: (IoSubSystem -> IO a) -> IO a
+GHC.IO.Unsafe unsafeDupableInterleaveIO :: IO a -> IO a
+GHC.IO.Unsafe unsafeDupablePerformIO :: IO a -> a
+GHC.IO.Unsafe unsafeInterleaveIO :: IO a -> IO a
+GHC.IO.Unsafe unsafePerformIO :: IO a -> a
+GHC.IOArray newIOArray :: Ix i => (i, i) -> e -> IO (IOArray i e)
+GHC.IOArray readIOArray :: Ix i => IOArray i e -> i -> IO e
+GHC.IOArray unsafeReadIOArray :: IOArray i e -> Int -> IO e
+GHC.IOArray unsafeWriteIOArray :: IOArray i e -> Int -> e -> IO ()
+GHC.IOArray writeIOArray :: Ix i => IOArray i e -> i -> e -> IO ()
+GHC.IORef atomicModifyIORef' :: IORef a -> (a -> (a, b)) -> IO b
+GHC.IORef atomicModifyIORef'_ :: IORef a -> (a -> a) -> IO (a, a)
+GHC.IORef atomicModifyIORef2 :: IORef a -> (a -> (a, b)) -> IO (a, (a, b))
+GHC.IORef atomicModifyIORef2Lazy :: IORef a -> (a -> (a, b)) -> IO (a, (a, b))
+GHC.IORef atomicModifyIORefLazy_ :: IORef a -> (a -> a) -> IO (a, a)
+GHC.IORef atomicModifyIORefP :: IORef a -> (a -> (a, b)) -> IO b
+GHC.IORef atomicSwapIORef :: IORef a -> a -> IO a
+GHC.IORef newIORef :: a -> IO (IORef a)
+GHC.IORef readIORef :: IORef a -> IO a
+GHC.IORef writeIORef :: IORef a -> a -> IO ()
+GHC.RTS.Flags getIoManagerFlag :: IO IoSubSystem
+GHC.TopHandler runIO :: IO a -> IO a
+GHC.TopHandler runIOFastExit :: IO a -> IO a
+GHC.TopHandler runMainIO :: IO a -> IO a
+GHC.TopHandler runNonIO :: a -> IO a
+GHC.Weak getFinalizerExceptionHandler :: IO (SomeException -> IO ())
+GHC.Weak printToHandleFinalizerExceptionHandler :: Handle -> SomeException -> IO ()
+GHC.Weak setFinalizerExceptionHandler :: (SomeException -> IO ()) -> IO ()
+GHC.Weak.Finalize getFinalizerExceptionHandler :: IO (SomeException -> IO ())
+GHC.Weak.Finalize printToHandleFinalizerExceptionHandler :: Handle -> SomeException -> IO ()
+GHC.Weak.Finalize setFinalizerExceptionHandler :: (SomeException -> IO ()) -> IO ()

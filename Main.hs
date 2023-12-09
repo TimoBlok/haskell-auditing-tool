@@ -7,7 +7,6 @@
 
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 import Algebra.Graph.AdjacencyMap (AdjacencyMap, edgeList, vertexList)
 import qualified Algebra.Graph.AdjacencyMap as AdjacencyMap
@@ -39,92 +38,34 @@ parseOpts = Options
         (   metavar "HIEDIR"
         <>  help "File path to look for .hie files in"
         <>  showDefault
-        <>  value "."
+        <>  value "default-input/hie-files/"
         )
     <*> strOption
         (   long "cache"
         <>  short 'c'
         <>  help "Database file to cache intermediate data in"
-        <>  metavar "FILE"
+        <>  metavar "DBFILE"
         <>  showDefault
-        <>  value "deps.sqlite"
+        <>  value "default-input/deps.sqlite"
         )
     <*> strOption
-        (   long "output-dir"
-        <>  short 'o'
-        <>  help "Directory to put generated .html files in"
-        <>  metavar "PATH"
+        (   long "blacklist"
+        <>  short 'b'
+        <>  help "Txt file with the blacklisted functions"
+        <>  metavar "BLACKLIST"
         <>  showDefault
-        <>  value "."
+        <>  value "default-input/"
         )
 data Options = Options {hieDir :: FilePath, dbFile :: FilePath, outDir :: FilePath}
 
--- Find the cross-module function dependency cycles in a haskell project,
--- and write them to .html files for visualization
-
+main :: IO ()
 main = do
     opts <- execParser ((parseOpts <**> helper) `info` fullDesc)
     withHieDb (dbFile opts) $ \db -> do
         -- Get the definition-dependency graph
         g <- getOrCreateGraph (hieDir opts) db
-        -- Get Strongly Connected Components,
-        -- i.e. clumps of mutually recursive defintions
-        let clumps = Acyclic.scc g
-        -- Keep only SCCs that cross modules
-        let sccs = Acyclic.vertexSet . Acyclic.induce
-                    (not . allInSameModule . Set.toList . NonEmpty.vertexSet) $ clumps
-        -- Print out analysis
-        putStrLn ("There are " ++ (show . Set.size) sccs ++ " cross-module SCCs in the code.")
-        hFlush stdout
-        forM_ ([1..] `zip` Set.toList sccs) $ \(n,scc) -> do
-            let json = encodeToLazyText . toD3 v2fqident v2ident v2module . NonEmpty.fromNonEmpty $ scc
-            let filepath = "scc" ++ show n ++ ".html"
-            Text.writeFile filepath [qq|
-<!DOCTYPE html>
-<style>
-$stylesheet
-</style>
-<script>
-$controller
-</script>
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<script>
-data = $json
-</script>
-        |]
-
--- Parts of the HTML graph viewer widget, loaded at compiled and printed into every generated html file 
-stylesheet,controller :: Text
-stylesheet = $(makeRelativeToProject "style.css" >>= embedStringFile)
-controller = $(makeRelativeToProject "controller.js" >>= embedStringFile)
-
--- Convert a graph from algebraic-graphs format to the JSON format
-toD3 :: (Eq v) => (v -> String) -> (v -> String) -> (v -> String) -> AdjacencyMap v -> D3Graph
-toD3 v2id v2name v2group g = D3Graph
-    {   nodes = vertexList g <&> \ v -> D3Node
-        {   id = v2id v
-        ,   name = v2name v
-        ,   group = v2group v
-        }
-    ,   edges = edgeList g <&> \ (v1,v2) -> D3Edge
-        {   source = v2id v1
-        ,   target = v2id v2
-        }
-    }
-
--- Data types mirroring the JSON input format to the graph viewer widget
-data D3Graph = D3Graph {nodes :: [D3Node], edges :: [D3Edge]} deriving (Generic)
-data D3Node = D3Node {id :: String, name :: String, group :: String}  deriving (Generic)
-data D3Edge = D3Edge {source :: String, target :: String} deriving (Generic)
-
-instance ToJSON D3Graph
-instance ToJSON D3Node
-instance ToJSON D3Edge
-
--- Are all the vertices in a list from the same module?
-allInSameModule :: [HieDb.Vertex] -> Bool
-allInSameModule [] = True
-allInSameModule (v:xs) = all (\v' -> v2module v' == v2module v) xs
+        print $ vertexList g
+        return ()
 
 -- Getter functions for HieDb.Vertex
 v2ident, v2module, v2fqident :: HieDb.Vertex -> String
