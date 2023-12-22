@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 
+-- | Responsible for handling everything related to core specific information, using CoreBinds
 module Core (
     getDependenciesFromCoreBinds,
     Declaration (..),
@@ -20,24 +21,15 @@ import Data.Set (Set)
 import Data.Set qualified as Set
 import GHC.Core (Alt (..), Bind (..), CoreBind, Expr (..))
 import GHC.Core.Type (Var)
-import GHC.Data.FastString (FastString, unconsFS, NonDetFastString (..))
 import GHC.Generics (Generic)
 import GHC.Types.Name (Name, OccName (occNameFS), nameModule_maybe, nameOccName)
 import GHC.Types.Var (varName)
 import GHC.Unit (moduleNameFS)
 import GHC.Unit.Module (Module, moduleUnitId)
 import GHC.Unit.Types (GenModule (moduleName), UnitId (..))
-import GHC.Utils.Outputable (Outputable (ppr), defaultSDocContext, hcat, showSDocOneLine)
+import GHC.Data.FastString (unconsFS)
 
-data Declaration = Declaration
-    { declModuleName :: FastString
-    , declUnitId :: FastString
-    , declOccName :: FastString
-    }
-    deriving (Eq)
-
--- | DependencyGraph (aka the call graph)
-type DependencyGraph = AdjacencyMap Declaration
+import Types ( Declaration(..), DependencyGraph )
 
 -- | reduceDependencies tidy up the output a bit.
 -- Remove duplicate edge and merge top level nodes
@@ -139,18 +131,3 @@ mkDecl genModule name = Declaration {declUnitId, declModuleName, declOccName}
     declUnitId = unitIdFS (moduleUnitId genModule)
     declModuleName = moduleNameFS (moduleName genModule)
     declOccName = occNameFS (nameOccName name)
-
-instance Outputable Declaration where
-    ppr decl =
-        hcat [ppr decl.declUnitId, ":", ppr decl.declModuleName, ".", ppr decl.declOccName]
-
-instance Show Declaration where
-    show = showSDocOneLine defaultSDocContext . ppr
-
-instance Ord Declaration where
-    compare d1 d2 =
-        fscomp d1.declModuleName d2.declModuleName
-            <> fscomp d1.declUnitId d2.declUnitId
-            <> fscomp d1.declOccName d2.declOccName
-      where
-        fscomp f1 f2 = compare (NonDetFastString f1) (NonDetFastString f2)

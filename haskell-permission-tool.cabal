@@ -12,6 +12,7 @@ executable haskell-permission-tool
       GhcSession 
     , Analysis
     , Core
+    , Types
   default-language:   GHC2021
   build-depends:
       algebraic-graphs

@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 
+-- | Reponsible for setting up the environment using dynamic flags inside a Ghc session
 module GhcSession (
     runGhcWithEnv,
     getCoreBind,
@@ -78,15 +79,15 @@ runGhcWithEnv action = do
 -- | Lookup a module and extract the simplified core.
 getCoreBind :: ModuleName -> Maybe FastString -> Ghc (Maybe (Module, [CoreBind]))
 getCoreBind moduleName mPkgId = do
-    try (unsafeGetCore moduleName mPkgId) >>= \case
+    try (getCoreBindUnsafe moduleName mPkgId) >>= \case
         Left (e :: SomeException) -> do
             liftIO $ putStrLn $ "Loading error: " <> show e
             pure Nothing
         Right n -> pure n
 
 -- | The 'getCoreBind' implementation, but throwing an exception from 'GHC.lookupModule'.
-unsafeGetCore :: ModuleName -> Maybe FastString -> Ghc (Maybe (Module, [CoreBind]))
-unsafeGetCore moduleName mPkgId = do
+getCoreBindUnsafe :: ModuleName -> Maybe FastString -> Ghc (Maybe (Module, [CoreBind]))
+getCoreBindUnsafe moduleName mPkgId = do
     liftIO $ putStrLn $ "Loading module " <> show (fromMaybe "" mPkgId) <> ":" <> show moduleName
     genModule <- GHC.lookupModule moduleName mPkgId
     getModuleInfo genModule >>= \case

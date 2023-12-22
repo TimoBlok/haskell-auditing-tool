@@ -1,6 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot #-}
-{-# LANGUAGE OverloadedStrings #-}
 
 module Analysis where
 
@@ -16,8 +15,6 @@ import Data.Map.Strict qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Foldable ( traverse_ )
-import GHC.Data.FastString (FastString, NonDetFastString (..), unpackFS)
-import GHC.Unit.Module (ModuleName, moduleNameString)
 
 import Core
     ( DependencyGraph,
@@ -27,23 +24,10 @@ import Core
 import GhcSession
     ( ModuleName, mkModuleNameFS, Ghc, runGhcWithEnv, getCoreBind )
 
-data ModuleFS = ModuleFS
-    { moduleName :: ModuleName
-    , moduleUnit :: Maybe FastString
-    }
-    deriving (Eq)
-
-instance Ord ModuleFS where
-    compare m1 m2 =
-        compare m1.moduleName m2.moduleName
-            <> compare (NonDetFastString <$> m1.moduleUnit) (NonDetFastString <$> m2.moduleUnit)
-
-instance Show ModuleFS where
-    show m = mUnit ++ moduleNameString m.moduleName
-        where
-            mUnit = case m.moduleUnit of
-                Nothing -> ""
-                Just fs -> unpackFS fs ++ ":"
+import Types
+    ( ModuleFS(..),
+      Declaration(declUnitId, declModuleName),
+      DependencyGraph )
 
 data Analysis = Analysis
         { getDependacyGraph :: DependencyGraph
