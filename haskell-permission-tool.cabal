@@ -1,5 +1,5 @@
 cabal-version: >= 2.0
-version: 1.0.20231030
+version: 1.0.20231230
 name:       haskell-permission-tool
 synopsis:   
 author:     Timo Blok
@@ -7,15 +7,20 @@ build-type: Simple
 
 executable haskell-permission-tool
   main-is:          Main.hs
-  default-language: Haskell2010
+  hs-source-dirs:   src 
+  other-modules: 
+      GhcSession 
+    , Analysis
+    , Core
+  default-language:   GHC2021
   build-depends:
-      aeson
-    , algebraic-graphs
-    , base
+      algebraic-graphs
+    , base < 5
     , containers
-    , file-embed
-    , hiedb < 0.4.4
-    , interpolatedstring-perl6
     , optparse-applicative
-    , text
+    , exceptions
+    , ghc
+    , ghc-paths
+    , ghc-prim
+    , transformers
 
