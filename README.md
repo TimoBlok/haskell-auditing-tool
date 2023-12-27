@@ -3,21 +3,25 @@
 
 ## Usage
 
-### Generate `.hie` files
+### Generate `.hi` files with simplified core
 
-Use the GHC option `-fwrite-ide-info`
+Use the GHC option `-fwrite-simplified-core-info`
 
-For more information on generating `.hie` files, see [this GHC blog post](https://www.haskell.org/ghc/blog/20190626-HIEFiles.html)
+This adds an extra section to the `.hi` files that we need to analyse dependencies
 
-### Process `.hie` files with `haskell-permission-tool` and `nix`
+### Generate `environment` files
+
+Use the cabal option `--write-ghc-environment-files=always
+
+### Process `.hi` files with `haskell-permission-tool` and `nix`
 
 See `nix run github:TimoBlok/haskell-permission-tool#ghc927 -- --help`
 
 ## Troubleshooting
 
-### "hie file versions don't match" error
+### "hi file versions don't match" error
 
-`haskell-permission-tool` must be compiled with the same GHC version that generated the `.hie` files.
+`haskell-permission-tool` must be compiled with the same GHC version that generated the `.hi` files.
 
 Update the `#ghcXXX` part of your `nix build` or `nix run` invocation.
 
@@ -34,6 +38,10 @@ After this completes, `nix run` will be instant for those versions.
 ## Development
 
 `nix build .#ghcXXX` type-checks & compiles with GHC version XXX
+
+## Related Projects
+
+CabalAudit
 
 ## Special thanks
 

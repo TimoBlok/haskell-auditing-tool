@@ -18,10 +18,10 @@ import Analysis
 parseOpts :: Parser Options
 parseOpts = Options
     <$> strOption
-        (   long "cabal-environment"
-        <>  metavar "CABALENV"
+        (   long "ghc-environment"
+        <>  metavar "ENVIRONMENT"
         <>  short 'e'
-        <>  help "FilePath to the .env file that came from running your cabal project with the flag --write-ghc-environment-files=always"
+        <>  help "FilePath to the env file that came from e.g. running your cabal project with the flag --write-ghc-environment-files=always"
         <>  showDefault
         <>  value "."
         )
