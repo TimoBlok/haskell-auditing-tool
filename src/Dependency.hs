@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 -- | All the types and instances we need for the analysis
-module Types where 
+module Dependency where 
 
 import Algebra.Graph.AdjacencyMap (AdjacencyMap)
 import GHC.Data.FastString (FastString, unconsFS, unpackFS, NonDetFastString (..))

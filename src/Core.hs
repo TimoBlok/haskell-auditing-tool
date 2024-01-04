@@ -29,7 +29,7 @@ import GHC.Unit.Module (Module, moduleUnitId)
 import GHC.Unit.Types (GenModule (moduleName), UnitId (..))
 import GHC.Data.FastString (unconsFS)
 
-import Types ( Declaration(..), DependencyGraph )
+import Dependency ( Declaration(..), DependencyGraph )
 
 -- | reduceDependencies tidy up the output a bit.
 -- Remove duplicate edge and merge top level nodes

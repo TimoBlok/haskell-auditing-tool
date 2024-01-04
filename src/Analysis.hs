@@ -24,10 +24,14 @@ import Core
 import GhcSession
     ( ModuleName, mkModuleNameFS, Ghc, runGhcWithEnv, getCoreBind )
 
-import Types
+import Dependency
     ( ModuleFS(..),
       Declaration(declUnitId, declModuleName),
       DependencyGraph )
+
+import Options
+import Control.Monad
+import Data.List
 
 data Analysis = Analysis
         { getDependacyGraph :: DependencyGraph
@@ -133,3 +137,22 @@ lookupOrLoadModule moduleInfo = do
                   let deps :: DependencyGraph
                       deps = getDependenciesFromCoreBinds genModule coreBinds
                   pure (Just deps)
+
+showAnalysis :: Options -> Analysis -> IO ()
+showAnalysis opts analysis = do 
+    unless (Set.null analysis.getMissingModules) $ do
+        print $ "Unknown modules: " <> intercalate ", " (show <$> Set.toList analysis.getMissingModules)
+    unless (Set.null analysis.getUnknownDecls) $ do
+        print $ "Unknown declaration: " <> intercalate ", " (show <$> Set.toList analysis.getUnknownDecls)
+
+    dumpDependencies (AdjMap.adjacencyList analysis.getDependacyGraph)
+
+    -- case opts.targetDecls of
+    --     [] -> dumpDependencies (AdjMap.adjacencyList analysis.callGraph)
+    --     xs -> checkTarget (AdjMap.adjacencyList analysis.callGraph) xs
+  where
+    dumpDependencies :: [(Declaration, [Declaration])] -> IO ()
+    dumpDependencies callGraph = do
+        forM_ callGraph $ \(decl, deps) -> do
+            unless (null deps) $ do
+                putStrLn $ show decl <> ": " <> intercalate ", " (show <$> deps)

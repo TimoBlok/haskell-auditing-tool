@@ -11,7 +11,9 @@ This adds an extra section to the `.hi` files that we need to analyse dependenci
 
 ### Generate `environment` files
 
-Use the cabal option `--write-ghc-environment-files=always
+Use the cabal option `--write-ghc-environment-files=always`
+
+example command: `cabal build --write-ghc-environment-files=always --ghc-options=-fwrite-if-simplified-core`
 
 ### Process `.hi` files with `haskell-permission-tool` and `nix`
 
@@ -39,9 +41,10 @@ After this completes, `nix run` will be instant for those versions.
 
 `nix build .#ghcXXX` type-checks & compiles with GHC version XXX
 
-## Related Projects
+## Related
 
-CabalAudit
+- [CabalAudit](https://github.com/TristanCacqueray/cabal-audit/tree/main)
+- GHC module [GHC.IfaceToCore](https://hackage.haskell.org/package/ghc-9.6.1/docs/GHC-IfaceToCore.html)
 
 ## Special thanks
 
