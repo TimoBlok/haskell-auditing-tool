@@ -5,27 +5,43 @@
 
 ### Generate `.hi` files with simplified core
 
-Use the GHC option `-fwrite-simplified-core-info`
+Use the GHC option `-fwrite-simplified-core-info`.
 
-This adds an extra section to the `.hi` files that we need to analyse dependencies
+This adds an extra section to the `.hi` files that we need to analyse dependencies.
+
+IMPORTANT: make sure you add this option inside a cabal.project file. Only then will it also rebuild the dependancies with this flag.
+
+Example cabal.project file
+
+```cabal
+packages:
+  .
+
+package *
+  ghc-options: -fwrite-if-simplified-core
+```
 
 ### Generate `environment` files
 
 Use the cabal option `--write-ghc-environment-files=always`
 
-example command: `cabal build --write-ghc-environment-files=always --ghc-options=-fwrite-if-simplified-core`
+example command: `cabal build --write-ghc-environment-files=always`
 
 ### Process `.hi` files with `haskell-permission-tool` and `nix`
 
 See `nix run github:TimoBlok/haskell-permission-tool#ghc927 -- --help`
 
+or `cabal run haskell-permission-tool -- --help`
+
 ## Troubleshooting
 
 ### "hi file versions don't match" error
 
-`haskell-permission-tool` must be compiled with the same GHC version that generated the `.hi` files.
+`haskell-permission-tool` must be compiled and ran with the same GHC version that generated the simplified core.
 
 Update the `#ghcXXX` part of your `nix build` or `nix run` invocation.
+
+Or set a differenc ghc version using `ghcup`.
 
 For more information on the backwards-(in)compatability of `.hie` files, see [this GHC ticket](https://gitlab.haskell.org/ghc/ghc/-/issues/18329)
 
