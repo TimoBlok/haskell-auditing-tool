@@ -18,7 +18,7 @@ import Data.Foldable ( traverse_ )
 
 import Core
     ( DependencyGraph,
-      Declaration(declUnitId, declModuleName),
+      Declaration(declUnitId, declModuleName, Declaration),
       getDependenciesFromCoreBinds )
 
 import GhcSession
@@ -32,6 +32,7 @@ import Dependency
 import Options
 import Control.Monad
 import Data.List
+import GHC.Data.FastString (FastString(FastString))
 
 data Analysis = Analysis
         { getDependacyGraph :: DependencyGraph
@@ -79,7 +80,7 @@ analyze rootModules = runGhcWithEnv $ do
       -- Load dependencies
       traverse_ go (concatMap snd dependancyList)
     where
-      -- goes trough all the declerations one by one 
+      -- goes trough all the declarations one by one 
       -- and loads them from their respective module and package
       go :: Declaration -> StateT Analysis Ghc ()
       go decl = do
@@ -94,10 +95,10 @@ analyze rootModules = runGhcWithEnv $ do
             -- find all declarations inside the module this decl is supposedly in
             let modInfo = ModuleFS (mkModuleNameFS decl.declModuleName) (Just decl.declUnitId)
             moduleDecls <- lookupOrLoadModule modInfo
-            declDeps <- if not $ AdjMap.hasVertex decl moduleDecls
+            declDeps <- if AdjMap.hasVertex decl moduleDecls
               then
                 -- were able to load module and find this decl inside it
-                pure $ AdjMap.postSet decl moduleDecls
+                pure $ AdjMap.postSet decl $ AdjMap.transitiveClosure moduleDecls
               else do
                 -- decl is not found in module it says it's in
                 addUnknownDecl decl
@@ -139,13 +140,19 @@ lookupOrLoadModule moduleInfo = do
                   pure (Just deps)
 
 showAnalysis :: Options -> Analysis -> IO ()
-showAnalysis opts analysis = do 
+showAnalysis opts analysis = do
+    putStrLn "Printing the analysis:\n"
+
     unless (Set.null analysis.getMissingModules) $ do
         print $ "Unknown modules: " <> intercalate ", " (show <$> Set.toList analysis.getMissingModules)
     unless (Set.null analysis.getUnknownDecls) $ do
         print $ "Unknown declaration: " <> intercalate ", " (show <$> Set.toList analysis.getUnknownDecls)
 
-    dumpDependencies (AdjMap.adjacencyList analysis.getDependacyGraph)
+    --dumpDependencies (AdjMap.adjacencyList analysis.getDependacyGraph)
+
+    --print $ AdjMap.adjacencyList analysis.getDependacyGraph
+
+    dumpTargetModuleDependencies (head opts.rootModules) analysis.getDependacyGraph
 
     -- case opts.targetDecls of
     --     [] -> dumpDependencies (AdjMap.adjacencyList analysis.callGraph)
@@ -156,3 +163,23 @@ showAnalysis opts analysis = do
         forM_ callGraph $ \(decl, deps) -> do
             unless (null deps) $ do
                 putStrLn $ show decl <> ": " <> intercalate ", " (show <$> deps)
+
+    dumpTargetModuleDependencies :: ModuleName -> DependencyGraph -> IO ()
+    dumpTargetModuleDependencies targetModuleName callGraph = do
+        forM_ (AdjMap.vertexSet callGraph) printTargetDecl
+      where
+        printTargetDecl :: Declaration -> IO ()
+        printTargetDecl decl = do
+            let deps = Set.toList $ AdjMap.postSet decl $ AdjMap.transitiveClosure callGraph
+
+                onlyLeaves = filter (null . (`AdjMap.postSet` callGraph)) deps
+
+            when (mkModuleNameFS decl.declModuleName == targetModuleName 
+              && not (null deps)
+              && isRootDeclInModule decl callGraph) $ do
+                putStrLn $ show decl <> ": " <> intercalate ", " (show <$> onlyLeaves)
+        
+        isRootDeclInModule :: Declaration -> DependencyGraph ->  Bool
+        isRootDeclInModule decl callGraph = not $ any 
+          (\parent -> parent.declModuleName == decl.declModuleName) 
+          (AdjMap.preSet decl callGraph)

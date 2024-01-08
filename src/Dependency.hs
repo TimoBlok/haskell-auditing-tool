@@ -23,7 +23,7 @@ data Declaration = Declaration
 
 instance Outputable Declaration where
     ppr decl =
-        hcat [ppr decl.declUnitId, ":", ppr decl.declModuleName, ".", ppr decl.declOccName]
+        hcat [{-ppr decl.declUnitId, ":",-} ppr decl.declModuleName, ".", ppr decl.declOccName]
 
 instance Show Declaration where
     show = showSDocOneLine defaultSDocContext . ppr

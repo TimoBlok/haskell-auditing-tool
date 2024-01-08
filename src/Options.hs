@@ -1,4 +1,7 @@
-module Options where 
+module Options (
+    getOpts,
+    Options (..)
+    ) where 
 
 import Options.Applicative
 import GHC.Unit.Module (ModuleName, mkModuleName)

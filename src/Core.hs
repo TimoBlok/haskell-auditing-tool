@@ -38,7 +38,18 @@ reduceDependencies = AdjMap.induce isValuable
   where
     isValuable decl =
         -- Ignore useless vars
-        (decl.declOccName /= "$krep") && not (isNameIgnored decl.declOccName)
+        not (isKrep decl.declOccName) && not (isNameIgnored decl.declOccName)
+
+    isKrep fs0 = isJust $ do
+        (c1, fs1) <- unconsFS fs0
+        (c2, fs2) <- unconsFS fs1
+        (c3, fs3) <- unconsFS fs2
+        (c4, fs4) <- unconsFS fs3
+        (c5, _) <- unconsFS fs4
+        if [c1, c2, c3, c4, c5] == "$krep" 
+            then Just ()
+            else Nothing
+    
     -- var that starts with '$tc' and '$tr' doesn't seem relevant
     isNameIgnored fs0 = isJust $ do
         (c1, fs1) <- unconsFS fs0
