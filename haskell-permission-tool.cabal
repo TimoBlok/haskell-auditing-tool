@@ -19,7 +19,6 @@ common common
     , ghc-prim
     , transformers
 
-
 library
   import: common 
   exposed-modules:
@@ -28,7 +27,6 @@ library
     , Core
     , Dependency
     , Options
-  ghc-options: -fwrite-if-simplified-core
 
 
 executable haskell-permission-tool

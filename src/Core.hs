@@ -5,6 +5,7 @@
 -- | Responsible for handling everything related to core specific information, using CoreBinds
 module Core (
     getDependenciesFromCoreBinds,
+    mkDecl,
     Declaration (..),
     DependencyGraph,
 ) where

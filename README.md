@@ -43,7 +43,6 @@ Update the `#ghcXXX` part of your `nix build` or `nix run` invocation.
 
 Or set a differenc ghc version using `ghcup`.
 
-For more information on the backwards-(in)compatability of `.hie` files, see [this GHC ticket](https://gitlab.haskell.org/ghc/ghc/-/issues/18329)
 
 ### `nix run .#ghcXXX` is slow for some values of `XXX`
 
