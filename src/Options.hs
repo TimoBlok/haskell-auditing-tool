@@ -1,12 +1,32 @@
 module Options (
     getOpts,
-    Options (..)
+    Options (..),
+    RootModules
     ) where 
 
 import Options.Applicative
+    ( Alternative(some),
+      (<**>),
+      fullDesc,
+      help,
+      info,
+      long,
+      metavar,
+      short,
+      showDefault,
+      strOption,
+      value,
+      execParser,
+      helper,
+      Parser )
 import GHC.Unit.Module (ModuleName, mkModuleName)
 
-data Options = Options {envFile :: FilePath, blacklistFile :: FilePath, rootModules :: [ModuleName]}
+data Options = Options {
+    envFile :: FilePath, 
+    targetDecls :: FilePath, 
+    rootModules :: RootModules}
+
+type RootModules = [ModuleName]
 
 getOpts :: IO Options
 getOpts = execParser ((parseOpts <**> helper) `info` fullDesc)
@@ -23,12 +43,12 @@ parseOpts = Options
         <>  value "."
         )
     <*> strOption
-        (   long "blacklist"
-        <>  metavar "BLACKLIST"
-        <>  short 'b'
-        <>  help "Txt file with the blacklisted functions"
+        (   long "target-decls"
+        <>  metavar "TARGETDECLS"
+        <>  short 'd'
+        <>  help "Txt file with the target function declerations to check whether anything depends on one of them"
         <>  showDefault
-        <>  value "input/Blacklist"
+        <>  value "input/target-decls"
         )
     <*> some (mkModuleName <$> strOption
         (   long "rootmodules"

@@ -6,7 +6,7 @@
 module Dependency where 
 
 import Algebra.Graph.AdjacencyMap (AdjacencyMap)
-import GHC.Data.FastString (FastString, unconsFS, unpackFS, NonDetFastString (..))
+import GHC.Data.FastString (FastString, unconsFS, unpackFS, NonDetFastString (..), mkFastString)
 import GHC.Utils.Outputable (Outputable (ppr), defaultSDocContext, hcat, showSDocOneLine)
 import GHC.Unit.Module (ModuleName, moduleNameString)
 
@@ -19,6 +19,16 @@ data Declaration = Declaration
     , declUnitId :: FastString
     , declOccName :: FastString
     } deriving (Eq)
+
+type UnitString = String
+type ModuleString = String
+type OccNameString = String
+
+mkDeclaration :: UnitString -> ModuleString -> OccNameString -> Declaration
+mkDeclaration unit mod occName = Declaration {
+    declUnitId = mkFastString unit, 
+    declModuleName = mkFastString mod, 
+    declOccName = mkFastString occName}
 
 instance Outputable Declaration where
     ppr decl =

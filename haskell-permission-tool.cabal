@@ -19,14 +19,16 @@ common common
     , ghc-prim
     , transformers
 
-library
+library hnsjamvsdhjenjvsdjqdwadvs
   import: common 
   exposed-modules:
-    GhcSession 
+      Main
+    , GhcSession 
     , Analysis
     , Core
     , Dependency
     , Options
+    , Visualize
 
 
 executable haskell-permission-tool
@@ -38,3 +40,4 @@ executable haskell-permission-tool
     , Core
     , Dependency
     , Options
+    , Visualize

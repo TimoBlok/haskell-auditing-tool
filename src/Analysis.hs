@@ -1,6 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot #-}
-{-# LANGUAGE OverloadedStrings #-}
 
 -- | module that does the analysis using a state monad
 -- keywords:
@@ -8,10 +7,7 @@
 -- dep(s) => dependencie(s)
 module Analysis where
 
-import Algebra.Graph.AdjacencyMap (AdjacencyMap)
 import qualified Algebra.Graph.AdjacencyMap as AdjMap
-import qualified Algebra.Graph.AdjacencyMap.Algorithm as Alg
-import Data.Tree (Forest, Tree (..), drawForest, foldTree)
 
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.State.Strict (StateT (..), execStateT, get, put)
@@ -21,28 +17,16 @@ import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Foldable ( traverse_ )
 
-import GHC.Unit.Module
-import GHC.Unit.Types
-
 import Core
-    ( DependencyGraph,
-      Declaration(declUnitId, declModuleName, Declaration, declOccName),
-      getDependenciesFromCoreBinds,
-      mkDecl )
+    ( getDependenciesFromCoreBinds )
 
 import GhcSession
     ( ModuleName, mkModuleNameFS, Ghc, runGhcWithEnv, getCoreBind )
 
 import Dependency
     ( ModuleFS(..),
-      Declaration(declUnitId, declModuleName),
+      Declaration(..),
       DependencyGraph )
-
-import Options ( Options(rootModules) )
-import Control.Monad ( unless, forM_ )
-import Data.List ( intercalate )
-import GHC.Data.FastString (FastString(FastString))
-import Data.Maybe (mapMaybe)
 
 data Analysis = Analysis
         { getDependacyGraph :: DependencyGraph
@@ -146,92 +130,4 @@ lookupOrLoadModule moduleInfo = do
               let deps :: DependencyGraph
                   deps = getDependenciesFromCoreBinds genModule coreBinds
               pure (Just deps)
-
-showAnalysis :: Options -> Analysis -> IO ()
-showAnalysis opts analysis = do
-    putStrLn "Printing the analysis:"
-
-    -- unless (Set.null analysis.getMissingModules) $ do
-    --     print $ "Unknown modules: " <> intercalate ", " (show <$> Set.toList analysis.getMissingModules)
-    -- unless (Set.null analysis.getUnknownDecls) $ do
-    --     print $ "Unknown declaration: " <> intercalate ", " (show <$> Set.toList analysis.getUnknownDecls)
-
-    --print $ AdjMap.adjacencyList analysis.getDependacyGraph
-    let depGraph = analysis.getDependacyGraph 
-        isTargetModule m = m `elem` opts.rootModules
-        blacklist = [Declaration {declUnitId = "base", declModuleName = "GHC.Base", declOccName = "id"}]
-        
-        -- the decls that are the root decls in the target modules with non empty dependencies
-        targetDecls = filter (\decl -> 
-          isTargetModule (mkModuleNameFS decl.declModuleName) && 
-          isRootDeclInModule decl depGraph &&
-          not (isLeaf decl depGraph)) 
-            (AdjMap.vertexList depGraph)
-        trimmedDepGraph = trimDepGraphWithBlacklist blacklist depGraph
-
-        forest        = Alg.bfsForest trimmedDepGraph targetDecls
-        trimmedForest = mapMaybe (trimTreeWithBlackList blacklist) forest
-
-    print targetDecls
-
-    putStrLn "Drawing Forest:"
-    
-    --print forest
-    printForest trimmedForest
-    
-    -- dump for all root modules
-    --dumpTargetDeclDeps targetDecls analysis.getDependacyGraph
-
-    -- case opts.targetDecls of
-    --     [] -> dumpDependencies (AdjMap.adjacencyList analysis.callGraph)
-    --     xs -> checkTarget (AdjMap.adjacencyList analysis.callGraph) xs
-    
-    
-    putStrLn "Analysis done!"
-  where
-    dumpTargetDeclDeps :: [Declaration] -> DependencyGraph -> IO ()
-    dumpTargetDeclDeps targetDecls callGraph = forM_ targetDecls printTargetDecl
-      where
-        printTargetDecl :: Declaration -> IO ()
-        printTargetDecl decl = do
-            let deps = Alg.reachable callGraph decl--AdjMap.postSet decl $ AdjMap.transitiveClosure callGraph
-
-                onlyLeaves = filter (null . (`AdjMap.postSet` callGraph)) deps
-
-            unless (null deps) $ putStrLn $ show decl <> ": " <> intercalate ", " (show <$> onlyLeaves)
-
-    isRootDeclInModule :: Declaration -> DependencyGraph ->  Bool
-    isRootDeclInModule decl callGraph = not $ any
-      (\parent -> parent.declModuleName == decl.declModuleName)
-      (AdjMap.preSet decl callGraph)
-
-    isLeaf :: Declaration -> DependencyGraph -> Bool 
-    isLeaf decl depGraph = let deps = Alg.reachable depGraph decl
-      in null deps
-
-    trimTreeWithBlackList :: [Declaration] -> Tree Declaration -> Maybe (Tree Declaration)
-    trimTreeWithBlackList blacklist tree = let (tree', b) = foldTree trimTree tree
-      in if b then Just tree' else Nothing
-      where
-        -- folds through each subtree and removes any branches that raise no concern
-        trimTree :: Declaration -> [(Tree Declaration, Bool)] -> (Tree Declaration, Bool)
-        trimTree decl trees = let subTrees = [t | (t,b) <- trees, b]
-          in (Node decl subTrees, not (null subTrees) || isBlacklisted decl)
-
-        isBlacklisted :: Declaration -> Bool
-        isBlacklisted decl = decl `elem` blacklist
- 
-    printForest :: Show a => Forest a -> IO ()
-    printForest forest = putStrLn $ drawForest $ (show <$>) <$> forest
-
-    -- removes any vertex that doesn't depend on a blacklisted declaration.
-    -- aka removes unnecessary leaves and branches
-    trimDepGraphWithBlacklist :: [Declaration] -> DependencyGraph -> DependencyGraph
-    trimDepGraphWithBlacklist blacklist depGraph = 
-      let deps              = Set.fromList . Alg.reachable depGraph
-          blacklistSet      = Set.fromList blacklist 
-          hasBlacklistedDep = not . null . Set.intersection blacklistSet . deps
-      in
-        AdjMap.induce hasBlacklistedDep depGraph
-
 
