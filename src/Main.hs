@@ -3,8 +3,6 @@
 -- | Script to analyse function dependency
 module Main where
 
-
-import Control.Monad 
 import Analysis ( analyze )
 import Options ( Options(..), getOpts )
 import Visualize ( TargetDecls, showAnalysis ) 
@@ -22,14 +20,12 @@ main = do
 
     putStrLn "analysis done."
 
-    showAnalysis targetDecls opts.rootModules analysis
+    showAnalysis targetDecls opts analysis
     return ()
 
 getTargetDecls :: FilePath -> IO TargetDecls
 getTargetDecls fp = do
-    contents <- lines <$> readFile fp 
-
-    return []
+    map parseTargetDecls . lines <$> readFile fp 
     where 
         parseTargetDecls :: String -> Declaration
         parseTargetDecls line = case words line of 

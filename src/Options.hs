@@ -24,6 +24,7 @@ import GHC.Unit.Module (ModuleName, mkModuleName)
 data Options = Options {
     envFile :: FilePath, 
     targetDecls :: FilePath, 
+    graphVizFile :: FilePath,
     rootModules :: RootModules}
 
 type RootModules = [ModuleName]
@@ -36,9 +37,9 @@ parseOpts :: Parser Options
 parseOpts = Options
     <$> strOption
         (   long "ghc-environment"
-        <>  metavar "ENVIRONMENT"
+        <>  metavar "GHCENVIRONMENT"
         <>  short 'e'
-        <>  help "FilePath to the env file that came from e.g. running your cabal project with the flag --write-ghc-environment-files=always"
+        <>  help "FilePath to the ghc environment file that came from e.g. running your cabal project with the flag --write-ghc-environment-files=always"
         <>  showDefault
         <>  value "."
         )
@@ -48,7 +49,15 @@ parseOpts = Options
         <>  short 'd'
         <>  help "Txt file with the target function declerations to check whether anything depends on one of them"
         <>  showDefault
-        <>  value "input/target-decls"
+        <>  value "input/target-decls.txt"
+        )
+    <*> strOption
+        (   long "graphviz-dot-file"
+        <>  metavar "GRAPHVIZ"
+        <>  short 'g'
+        <>  help "The prefered path of where the .dot file will be stored"
+        <>  showDefault
+        <>  value "output/graph.dot"
         )
     <*> some (mkModuleName <$> strOption
         (   long "rootmodules"

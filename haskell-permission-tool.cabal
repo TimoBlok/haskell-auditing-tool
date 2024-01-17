@@ -18,8 +18,9 @@ common common
     , ghc-paths
     , ghc-prim
     , transformers
+    , directory
 
-library hnsjamvsdhjenjvsdjqdwadvs
+library
   import: common 
   exposed-modules:
       Main
