@@ -8,6 +8,7 @@
 module Analysis where
 
 import qualified Algebra.Graph.AdjacencyMap as AdjMap
+import qualified Algebra.Graph.AdjacencyMap.Algorithm as Alg
 
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.State.Strict (StateT (..), execStateT, get, put)
@@ -91,7 +92,7 @@ analyze rootModules = runGhcWithEnv $ runAnalysis $ do
             declDeps <- if AdjMap.hasVertex decl moduleDecls
               then
                 -- were able to load module and find this decl inside it
-                pure $ AdjMap.postSet decl $ AdjMap.transitiveClosure moduleDecls
+                pure $ Alg.reachable moduleDecls decl --AdjMap.postSet decl $ AdjMap.transitiveClosure moduleDecls
               else do
                 -- decl is not found in module it says it's in
                 addUnknownDecl decl
@@ -99,7 +100,7 @@ analyze rootModules = runGhcWithEnv $ runAnalysis $ do
 
             -- store result in analysis
             addKnownDecl decl
-            addDeclaration decl $ Set.toList declDeps
+            addDeclaration decl declDeps
 
             -- collect the dependencies of the dependencies
             traverse_ go declDeps

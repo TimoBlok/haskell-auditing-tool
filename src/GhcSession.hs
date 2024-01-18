@@ -123,11 +123,11 @@ getCoreBindFromIFace hscEnv modIface = do
         ifGblEnv = IfGblEnv "" emptyKnotVars
     case modIface.mi_extra_decls of
         Nothing -> do
-            liftIO $ putStrLn "Module doesn't have simplified core! (missing -fwrite-if-simplified-core?)"
+            liftIO $ putStrLn "Module doesn't have simplified core! (missing -fwrite-if-simplified-core?) or package from ghc"
             pure Nothing
         Just decls -> do
             typeEnv <- newIORef emptyTypeEnv
             runIOEnv (Env hscEnv 'a' ifGblEnv ifLclEnv) $ do
                 coreBinds <- tcTopIfaceBindings typeEnv decls
-                liftIO $ putStrLn $ "Converted " <> show (length decls) <> " decl into " <> show (length coreBinds)
+                --liftIO $ putStrLn $ "Converted " <> show (length decls) <> " decl into " <> show (length coreBinds)
                 pure (Just coreBinds)

@@ -9,7 +9,9 @@ Use the GHC option `-fwrite-simplified-core-info`.
 
 This adds an extra section to the `.hi` files that we need to analyse dependencies.
 
-IMPORTANT: make sure you add this option inside a cabal.project file. Only then will it also rebuild the dependancies with this flag.
+Please also use the option `-O0`, which turns off optimisation, preserving function names and structure.
+
+IMPORTANT: make sure you add this option inside a cabal.project file. Only then will it also rebuild the projects build dependencies with this flag.
 
 Example cabal.project file
 
@@ -18,14 +20,16 @@ packages:
   .
 
 package *
-  ghc-options: -fwrite-if-simplified-core
+  ghc-options: -fwrite-if-simplified-core -O0
 ```
 
 ### Generate `environment` files
 
+If you want to analyse any of your own modules, you must setup your `.cabal` file, such that it contains a lirary with the module you'd like to analyze.
+
 Use the cabal option `--write-ghc-environment-files=always`
 
-example command: `cabal build --write-ghc-environment-files=always`
+example command: `cabal build exe:example-project --write-ghc-environment-files=always`
 
 ### Process `.hi` files with `haskell-permission-tool` and `nix`
 
