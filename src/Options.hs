@@ -5,25 +5,12 @@ module Options (
     ) where 
 
 import Options.Applicative
-    ( Alternative(some),
-      (<**>),
-      fullDesc,
-      help,
-      info,
-      long,
-      metavar,
-      short,
-      showDefault,
-      strOption,
-      value,
-      execParser,
-      helper,
-      Parser )
 import GHC.Unit.Module (ModuleName, mkModuleName)
 
 data Options = Options {
     envFile :: FilePath, 
     targetDecls :: FilePath, 
+    useGraphViz :: Bool,
     graphVizFile :: FilePath,
     rootModules :: RootModules}
 
@@ -46,18 +33,24 @@ parseOpts = Options
     <*> strOption
         (   long "target-decls"
         <>  metavar "TARGETDECLS"
-        <>  short 'd'
+        <>  short 't'
         <>  help "Txt file with the target function declerations to check whether anything depends on one of them"
         <>  showDefault
-        <>  value "input/target-decls.txt"
+        <>  value "target-decls.txt"
+        )
+    <*> switch
+        (   long "use-graphviz"
+        <>  short 'g'
+        <>  help "Whether graphviz dot file is written. Specify filePath with graphviz-dot-path"
+        <>  showDefault
         )
     <*> strOption
-        (   long "graphviz-dot-file"
-        <>  metavar "GRAPHVIZ"
-        <>  short 'g'
+        (   long "graphviz-dot-path"
+        <>  metavar "DOTPATH"
+        <>  short 'd'
         <>  help "The prefered path of where the .dot file will be stored"
         <>  showDefault
-        <>  value "output/graph.dot"
+        <>  value ""
         )
     <*> some (mkModuleName <$> strOption
         (   long "rootmodules"

@@ -5,7 +5,7 @@ module Main where
 
 import Analysis ( analyze )
 import Options ( Options(..), getOpts )
-import Visualize ( TargetDecls, showAnalysis ) 
+import Output ( TargetDecls, outputAnalysis ) 
 import Dependency (Declaration(Declaration), mkDeclaration)
 
 main :: IO ()
@@ -20,7 +20,7 @@ main = do
 
     putStrLn "analysis done."
 
-    showAnalysis targetDecls opts analysis
+    outputAnalysis targetDecls opts analysis
     return ()
 
 getTargetDecls :: FilePath -> IO TargetDecls

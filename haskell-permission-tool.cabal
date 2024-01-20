@@ -19,26 +19,27 @@ common common
     , ghc-prim
     , transformers
     , directory
+    , split
 
 library
   import: common 
   exposed-modules:
       Main
-    , GhcSession 
     , Analysis
     , Core
     , Dependency
+    , GhcSession 
     , Options
-    , Visualize
+    , Output
 
 
 executable haskell-permission-tool
   import:        common
   main-is:       Main.hs
   other-modules:
-    GhcSession 
     , Analysis
     , Core
     , Dependency
+    , GhcSession 
     , Options
-    , Visualize
+    , Output
