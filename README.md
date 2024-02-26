@@ -5,7 +5,7 @@
 
 ### Generate `.hi` files with simplified core
 
-Use the GHC option `-fwrite-simplified-core-info`.
+Use the GHC option `-fwrite-simplified-core-info`. This requires ghc version >= 9.6.2.
 
 This adds an extra section to the `.hi` files that we need to analyse dependencies.
 
@@ -20,12 +20,12 @@ packages:
   .
 
 package *
-  ghc-options: -fwrite-if-simplified-core -O0
+  ghc-options: -fwrite-if-simplified-core -O0 -fno-omit-interface-pragmas
 ```
 
 ### Generate `environment` files
 
-If you want to analyse any of your own modules, you must setup your `.cabal` file, such that it contains a lirary with the module you'd like to analyze.
+If you want to analyse any of your own modules, you must setup your `.cabal` file such that it contains a lirary with the module you'd like to analyze.
 
 Use the cabal option `--write-ghc-environment-files=always`
 
@@ -33,7 +33,7 @@ example command: `cabal build exe:example-project --write-ghc-environment-files=
 
 ### Process `.hi` files with `haskell-permission-tool` and `nix`
 
-See `nix run github:TimoBlok/haskell-permission-tool#ghc927 -- --help`
+See `nix run github:TimoBlok/haskell-permission-tool#ghc962 -- --help`
 
 or `cabal run haskell-permission-tool -- --help`
 

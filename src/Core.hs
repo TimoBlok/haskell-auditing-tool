@@ -14,20 +14,23 @@ import qualified Algebra.Graph.Acyclic.AdjacencyMap as Acyclic
 import qualified Algebra.Graph.NonEmpty.AdjacencyMap as NonEmpty
 
 import Data.Map.Strict qualified as Map
-import Data.Maybe ( isJust )
+import Data.Maybe ( isJust, fromMaybe )
 import Data.Set (Set)
 import Data.Set qualified as Set
 import GHC.Core (Alt (..), Bind (..), CoreBind, Expr (..))
-import GHC.Core.Type (Var)
+import GHC.Core.Type (Var(..))
 import GHC.Generics (Generic)
 import GHC.Types.Name (Name, OccName (occNameFS), nameModule_maybe, nameOccName)
+import GHC.Types.Name.Occurrence (occNameString)
 import GHC.Types.Var (varName)
 import GHC.Unit (moduleNameFS)
 import GHC.Unit.Module (Module, moduleUnitId)
 import GHC.Unit.Types (GenModule (moduleName), UnitId (..))
-import GHC.Data.FastString (unconsFS)
+import GHC.Data.FastString (unconsFS, unpackFS)
+import GHC.Utils.Outputable (Outputable (ppr), defaultSDocContext, hcat, showSDocOneLine)
 
 import Dependency ( Declaration(..), DependencyGraph )
+import GHC.IO (unsafePerformIO)
 
 -- | reduceDependencies tidy up the output a bit.
 -- Remove duplicate edge and merge top level nodes
@@ -39,24 +42,12 @@ reduceDependencies = AdjMap.induce isValuable
         not (isKrep decl.declOccName) &&
         not (isNameIgnored decl.declOccName)
 
-    isKrep fs0 = isJust $ do
-        (c1, fs1) <- unconsFS fs0
-        (c2, fs2) <- unconsFS fs1
-        (c3, fs3) <- unconsFS fs2
-        (c4, fs4) <- unconsFS fs3
-        (c5, _) <- unconsFS fs4
-        if [c1, c2, c3, c4, c5] == "$krep"
-            then Just ()
-            else Nothing
-
+    -- has to do with kinds
+    isKrep =  (== "$krep") . take 5 . unpackFS
+    
     -- var that starts with '$tc' and '$tr' doesn't seem relevant
-    isNameIgnored fs0 = isJust $ do
-        (c1, fs1) <- unconsFS fs0
-        (c2, fs2) <- unconsFS fs1
-        (c3, _) <- unconsFS fs2
-        if [c1, c2, c3] == "$tc" || [c1, c2, c3] == "$tr"
-            then Just ()
-            else Nothing
+    isNameIgnored =  (\n -> n == "$tc" || n == "$tr") . take 5 . unpackFS
+
 
 getDependenciesFromCoreBinds :: Module -> [CoreBind] -> DependencyGraph
 getDependenciesFromCoreBinds genModule coreBinds =
@@ -103,6 +94,12 @@ getDependenciesFromCore genModule topVars coreBind = case coreBind of
               otherwise ->
                 []
         Lit _lit -> mempty
+
+        -- specialise type class function calls
+        App (App (App (Var fnVar) (Type _)) (Var dictVar)) arg
+          | isDictionaryValue dictVar && (isExternalVar dictVar || dictVar `Set.member` topVars)
+            -> specialise genModule fnVar dictVar : getExprDeps (Var fnVar) <> getExprDeps arg
+
         App expr arg -> foldMap getExprDeps [expr, arg]
         Lam _b expr -> getExprDeps expr
         Let bind expr -> getBindDeps bind <> getExprDeps expr
@@ -111,6 +108,23 @@ getDependenciesFromCore genModule topVars coreBind = case coreBind of
         Tick _ expr -> getExprDeps expr
         Type _type -> mempty
         Coercion _coer -> mempty
+
+    isDictionaryValue :: Var -> Bool
+    isDictionaryValue var =
+        let s = occNameString $ nameOccName $ varName var
+        in take 2 s == "$f"
+
+    specialise :: Module -> Var -> Var -> Declaration
+    specialise genModule fnVar dictVar =
+      let
+        decl = varDecl genModule dictVar
+        fnFS = occNameFS $ nameOccName $ varName fnVar
+
+        -- fromMaybe 
+        --   (error $ "specialisation failed" ++ occNameString (nameOccName $ varName fnVar) ++ occNameString (nameOccName $ varName dictVar)) $ 
+          
+      in
+        decl {declOccName = declOccName decl <> "_$c" <> fnFS}
 
     getBindDeps :: CoreBind -> [Declaration]
     getBindDeps = \case

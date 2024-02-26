@@ -28,13 +28,15 @@ import Dependency
     ( ModuleFS(..),
       Declaration(..),
       DependencyGraph )
+import Control.Monad (when)
+import Control.Monad.IO.Class (MonadIO(liftIO))
 
 data Analysis = Analysis
         { getDependacyGraph :: DependencyGraph
         , getMissingModules :: Set ModuleFS
         , getUnknownDecls :: Set Declaration
         , getKnownModules :: Map ModuleFS DependencyGraph
-        , getKnownDecls :: Set Declaration
+        , getProcessedDecls :: Set Declaration
         }
 
 getAnalysisWithSelector :: (Monad m) => (Analysis -> a) -> StateT Analysis m a
@@ -52,8 +54,8 @@ addKnownModules key value = get >>= \s -> put s{getKnownModules = Map.insert key
 addUnknownDecl :: (Monad m) => Declaration -> StateT Analysis m ()
 addUnknownDecl decl = get >>= \s -> put s{getUnknownDecls = Set.insert decl s.getUnknownDecls}
 
-addKnownDecl :: (Monad m) => Declaration -> StateT Analysis m ()
-addKnownDecl decl = get >>= \s -> put s{getKnownDecls = Set.insert decl s.getKnownDecls}
+addProcessedDecl :: (Monad m) => Declaration -> StateT Analysis m ()
+addProcessedDecl decl = get >>= \s -> put s{getProcessedDecls = Set.insert decl s.getProcessedDecls}
 
 addMissingModule :: (Monad m) => ModuleFS -> StateT Analysis m ()
 addMissingModule mi = get >>= \s -> put s{getMissingModules = Set.insert mi s.getMissingModules}
@@ -79,9 +81,9 @@ analyze rootModules = runGhcWithEnv $ runAnalysis $ do
       go :: Declaration -> StateT Analysis Ghc ()
       go decl = do
         depGraph <- getAnalysisWithSelector getDependacyGraph
-        knownDecls <- getAnalysisWithSelector getKnownDecls
+        processedDecls <- getAnalysisWithSelector getProcessedDecls
 
-        if Set.member decl knownDecls
+        if Set.member decl processedDecls
           then -- already processed
             pure ()
 
@@ -97,9 +99,12 @@ analyze rootModules = runGhcWithEnv $ runAnalysis $ do
                 -- decl is not found in module it says it's in
                 addUnknownDecl decl
                 pure mempty
-
+            
+            -- when (decl `elem` declDeps) $ 
+            --   liftIO $ putStrLn ("Cycle! " <> show decl <> " is in " <> show declDeps)
+            
             -- store result in analysis
-            addKnownDecl decl
+            addProcessedDecl decl
             addDeclaration decl declDeps
 
             -- collect the dependencies of the dependencies
@@ -119,7 +124,7 @@ lookupOrLoadModule moduleInfo = do
                 Nothing -> do  -- could not be loaded
                     -- store missing module in analysis
                     addMissingModule moduleInfo
-                    pure AdjMap.empty
+                    pure mempty
             -- store module in analysis
             addKnownModules moduleInfo deps
             pure deps
