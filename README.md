@@ -20,7 +20,7 @@ packages:
   .
 
 package *
-  ghc-options: -fwrite-if-simplified-core -O0 -fno-omit-interface-pragmas
+  ghc-options: -fwrite-if-simplified-core -O0 
 ```
 
 ### Generate `environment` files
@@ -33,7 +33,7 @@ example command: `cabal build exe:example-project --write-ghc-environment-files=
 
 ### Process `.hi` files with `haskell-permission-tool` and `nix`
 
-See `nix run github:TimoBlok/haskell-permission-tool#ghc962 -- --help`
+See `nix run github:TimoBlok/haskell-permission-tool#ghc962  -- --help`
 
 or `cabal run haskell-permission-tool -- --help`
 
@@ -62,7 +62,7 @@ After this completes, `nix run` will be instant for those versions.
 
 ## Related
 
-- [CabalAudit](https://github.com/TristanCacqueray/cabal-audit/tree/main)
+- Parts of this project are heavily inpsired by [cabal-audit](https://github.com/TristanCacqueray/cabal-audit/tree/main)
 - GHC module [GHC.IfaceToCore](https://hackage.haskell.org/package/ghc-9.6.1/docs/GHC-IfaceToCore.html)
 
 ## Special thanks

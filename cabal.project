@@ -2,4 +2,4 @@ packages:
   .
 
 package *
-  ghc-options: -fwrite-if-simplified-core
+  ghc-options: -O1

@@ -1,6 +1,7 @@
 
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 -- | All the types and instances we need for the analysis
 module Dependency where 
@@ -13,7 +14,7 @@ import GHC.Unit.Module (ModuleName, moduleNameString)
 -- | DependencyGraph (aka the call graph)
 type DependencyGraph = AdjacencyMap Declaration
 
--- | stores all the data we need to describe a funtion decleration
+-- | stores all the data we need to describe a funtion declaration
 data Declaration = Declaration
     { declModuleName :: FastString
     , declUnitId :: FastString

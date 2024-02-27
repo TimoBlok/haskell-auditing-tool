@@ -20,6 +20,8 @@ common common
     , transformers
     , directory
     , split
+    , aeson
+    , text
 
 library
   import: common 
@@ -31,6 +33,8 @@ library
     , GhcSession 
     , Options
     , Output
+    , AnalysisPlugin
+    , Json
 
 
 executable haskell-permission-tool
@@ -43,3 +47,4 @@ executable haskell-permission-tool
     , GhcSession 
     , Options
     , Output
+    , Json
