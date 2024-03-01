@@ -3,10 +3,10 @@
 -- | Script to analyse function dependency
 module Main where
 
-import Analysis ( analyze )
 import Options ( Options(..), getOpts )
 import Output ( TargetDecls, outputAnalysis ) 
 import Dependency (Declaration(Declaration), mkDeclaration)
+import Collect (collectDependencies)
 
 main :: IO ()
 main = do
@@ -14,13 +14,13 @@ main = do
 
     targetDecls <- getTargetDecls opts.targetDecls
 
-    putStrLn "starting analysis..."
+    putStrLn "Collecting json files..."
 
-    analysis <- analyze opts.rootModules
+    depGraph <- collectDependencies opts.pathToJsonFiles
 
-    putStrLn "analysis done."
+    putStrLn "Done!"
 
-    outputAnalysis targetDecls opts analysis
+    outputAnalysis targetDecls opts depGraph
     return ()
 
 getTargetDecls :: FilePath -> IO TargetDecls

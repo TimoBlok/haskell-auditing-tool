@@ -13,20 +13,19 @@ import Control.Monad ( unless, forM_, when )
 import Data.List ( intercalate, nub )
 import Data.List.Split
 import Data.Char ( isAlphaNum )
-import GHC.Data.FastString ( FastString(FastString) )
-import GHC.Utils.Outputable ( defaultSDocContext, hcat, ftext, ppr, showSDocOneLine )
 import Data.Maybe ( mapMaybe )
 import GHC.Unit.Module
 import Dependency
 import Options
-import Analysis
 import Data.Foldable (foldl')
 
 type TargetDecls = [Declaration]
 
-outputAnalysis :: TargetDecls -> Options -> Analysis -> IO ()
-outputAnalysis targetDecls options analysis = do
-    putStrLn "Printing the analysis:"
+outputAnalysis :: TargetDecls -> Options -> DependencyGraph -> IO ()
+outputAnalysis targetDecls options depGraph' = do
+    putStrLn "Printing the dependency graph:"
+
+    print $ AdjMap.adjacencyList depGraph'
 
     -- unless (Set.null analysis.getMissingModules) $ do
     --     print $ "Unknown modules: " <> intercalate ", " (show <$> Set.toList analysis.getMissingModules)
@@ -35,14 +34,14 @@ outputAnalysis targetDecls options analysis = do
 
     --print $ AdjMap.adjacencyList analysis.getDependacyGraph
     let rootModules = options.rootModules
-        depGraph = removeSelfLoops analysis.getDependacyGraph
+        depGraph = removeSelfLoops depGraph'
         isRootModule m = m `elem` rootModules
         --example = Declaration {declUnitId = "base", declModuleName = "System.IO", declOccName = "print"}
 
 
         -- the decls that are the root decls in the target modules with non empty dependencies
         rootDecls = filter (\decl ->
-          isRootModule (mkModuleNameFS decl.declModuleName) &&
+          isRootModule (mkModuleName decl.declModuleName) &&
           --isRootDeclInModule decl depGraph &&
           not (isLeaf decl depGraph))
             (AdjMap.vertexList depGraph)
@@ -53,7 +52,7 @@ outputAnalysis targetDecls options analysis = do
 
     -- print rootModules
     -- print rootDecls
-    -- dumpRootDeclDeps rootDecls depGraph
+    dumpRootDeclDeps rootDecls depGraph
     -- print $ AdjMap.adjacencyList depGraph
     -- print $ AdjMap.adjacencyList trimmedDepGraph
 
@@ -142,16 +141,4 @@ dumpGraphViz fp depGraph = do
     "}"
   where
     showGraphVizEdge :: (Declaration, Declaration) -> String
-    showGraphVizEdge (v1, v2) = concat ["\"", showFS v1.declOccName, "\" -> \"", showFS v2.declOccName, "\";\n"]
-
-    pprOccName :: FastString -> String
-    pprOccName = dropNonLetters . showFS
-
-    dropNonLetters :: String -> String
-    dropNonLetters "!" = "bang"
-    dropNonLetters "&=" = "andEqOperator"
-    dropNonLetters "strict" = "_strict" -- reserved keyword in the dot language
-    dropNonLetters s =  foldr (\c acc -> if isAlphaNum c then c:acc else acc) "" s
-
-showFS :: FastString -> String
-showFS = showSDocOneLine defaultSDocContext . ftext
+    showGraphVizEdge (v1, v2) = concat ["\"", v1.declOccName, "\" -> \"", v2.declOccName, "\";\n"]

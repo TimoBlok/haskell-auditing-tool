@@ -24,8 +24,8 @@ import GHC.Types.Name (Name, OccName (occNameFS), nameModule_maybe, nameOccName)
 import GHC.Types.Name.Occurrence (occNameString)
 import GHC.Types.Var (varName)
 import GHC.Unit (moduleNameFS)
-import GHC.Unit.Module (Module, moduleUnitId)
-import GHC.Unit.Types (GenModule (moduleName), UnitId (..))
+import GHC.Unit.Module (Module, moduleUnitId, moduleNameString)
+import GHC.Unit.Types (GenModule (moduleName), UnitId (..), unitIdString)
 import GHC.Data.FastString (unconsFS, unpackFS)
 import GHC.Utils.Outputable (Outputable (ppr), defaultSDocContext, hcat, showSDocOneLine)
 
@@ -43,10 +43,10 @@ reduceDependencies = AdjMap.induce isValuable
         not (isNameIgnored decl.declOccName)
 
     -- has to do with kinds
-    isKrep =  (== "$krep") . take 5 . unpackFS
+    isKrep =  (== "$krep") . take 5
     
     -- var that starts with '$tc' and '$tr' doesn't seem relevant
-    isNameIgnored =  (\n -> n == "$tc" || n == "$tr") . take 5 . unpackFS
+    isNameIgnored =  (\n -> n == "$tc" || n == "$tr") . take 3
 
 
 getDependenciesFromCoreBinds :: Module -> [CoreBind] -> DependencyGraph
@@ -95,10 +95,10 @@ getDependenciesFromCore genModule topVars coreBind = case coreBind of
                 []
         Lit _lit -> mempty
 
-        -- specialise type class function calls
-        App (App (App (Var fnVar) (Type _)) (Var dictVar)) arg
-          | isDictionaryValue dictVar && (isExternalVar dictVar || dictVar `Set.member` topVars)
-            -> specialise genModule fnVar dictVar : getExprDeps (Var fnVar) <> getExprDeps arg
+        -- -- specialise type class function calls
+        -- App (App (App (Var fnVar) (Type _)) (Var dictVar)) arg
+        --   | isDictionaryValue dictVar && (isExternalVar dictVar || dictVar `Set.member` topVars)
+        --     -> specialise genModule fnVar dictVar : getExprDeps (Var fnVar) <> getExprDeps arg
 
         App expr arg -> foldMap getExprDeps [expr, arg]
         Lam _b expr -> getExprDeps expr
@@ -109,22 +109,22 @@ getDependenciesFromCore genModule topVars coreBind = case coreBind of
         Type _type -> mempty
         Coercion _coer -> mempty
 
-    isDictionaryValue :: Var -> Bool
-    isDictionaryValue var =
-        let s = occNameString $ nameOccName $ varName var
-        in take 2 s == "$f"
+    -- isDictionaryValue :: Var -> Bool
+    -- isDictionaryValue var =
+    --     let s = occNameString $ nameOccName $ varName var
+    --     in take 2 s == "$f"
 
-    specialise :: Module -> Var -> Var -> Declaration
-    specialise genModule fnVar dictVar =
-      let
-        decl = varDecl genModule dictVar
-        fnFS = occNameFS $ nameOccName $ varName fnVar
+    -- specialise :: Module -> Var -> Var -> Declaration
+    -- specialise genModule fnVar dictVar =
+    --   let
+    --     decl = varDecl genModule dictVar
+    --     fnFS = occNameFS $ nameOccName $ varName fnVar
 
-        -- fromMaybe 
-        --   (error $ "specialisation failed" ++ occNameString (nameOccName $ varName fnVar) ++ occNameString (nameOccName $ varName dictVar)) $ 
+    --     -- fromMaybe 
+    --     --   (error $ "specialisation failed" ++ occNameString (nameOccName $ varName fnVar) ++ occNameString (nameOccName $ varName dictVar)) $ 
           
-      in
-        decl {declOccName = declOccName decl <> "_$c" <> fnFS}
+    --   in
+    --     decl {declOccName = declOccName decl <> "_$c" <> fnFS}
 
     getBindDeps :: CoreBind -> [Declaration]
     getBindDeps = \case
@@ -152,6 +152,6 @@ mkGlobalDecl name = do
 mkDecl :: Module -> Name -> Declaration
 mkDecl genModule name = Declaration {declUnitId, declModuleName, declOccName}
   where
-    declUnitId = unitIdFS (moduleUnitId genModule)
-    declModuleName = moduleNameFS (moduleName genModule)
-    declOccName = occNameFS (nameOccName name)
+    declUnitId = unitIdString (moduleUnitId genModule)
+    declModuleName = moduleNameString (moduleName genModule)
+    declOccName = occNameString (nameOccName name)

@@ -47,7 +47,6 @@ Update the `#ghcXXX` part of your `nix build` or `nix run` invocation.
 
 Or set a differenc ghc version using `ghcup`.
 
-
 ### `nix run .#ghcXXX` is slow for some values of `XXX`
 
 For versions of GHC without packages cached online in nixpkgs, `nix` must recompile all the Haskell depndencies of `haskell-permission-tool` from scratch.

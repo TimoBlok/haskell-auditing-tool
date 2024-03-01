@@ -1,5 +1,5 @@
 cabal-version: 3.6
-version: 1.0.20240104
+version: 1.0.20240301.6
 name:       haskell-permission-tool
 synopsis:   
 author:     Timo Blok
@@ -22,29 +22,28 @@ common common
     , split
     , aeson
     , text
+    , filepath
 
 library
   import: common 
   exposed-modules:
       Main
-    , Analysis
     , Core
     , Dependency
-    , GhcSession 
     , Options
     , Output
-    , AnalysisPlugin
     , Json
+    , Collect
+    , Plugin.AnalysisPlugin
 
 
 executable haskell-permission-tool
   import:        common
   main-is:       Main.hs
   other-modules:
-    , Analysis
     , Core
     , Dependency
-    , GhcSession 
     , Options
     , Output
     , Json
+    , Collect

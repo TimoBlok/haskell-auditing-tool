@@ -1,27 +1,27 @@
-module Json where 
+module Json (
+  encodeFile,
+  eitherDecodeFileStrict   
+) where
 
 import Data.Aeson
-import Data.Text
-import GHC.Generics
+    ( encodeFile,
+      eitherDecodeFileStrict ,
+      defaultOptions,
+      genericToEncoding,
+      FromJSON,
+      FromJSONKey,
+      ToJSON(toEncoding),
+      ToJSONKey )
+import Algebra.Graph.AdjacencyMap (AdjacencyMap)
 
-import Dependency
+import Dependency ( Declaration )
 
-instance ToJSON (AdjacencyMap Declaration) where 
+instance ToJSON (AdjacencyMap Declaration) where
     toEncoding = genericToEncoding defaultOptions
 instance FromJSON (AdjacencyMap Declaration)
 
-instance Generic Declaration
-
-instance ToJSON Declaration where 
+instance ToJSON Declaration where
     toEncoding = genericToEncoding defaultOptions
 instance ToJSONKey Declaration
 instance FromJSON Declaration
 instance FromJSONKey Declaration
-
-instance Generic FastString
-
-instance ToJSON FastString where 
-    toJSON = toJSON . unpackFS
-
-instance FromJSON FastString where 
-    parseJSON (String text) = mkFastString . unpack <$> pure text

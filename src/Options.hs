@@ -8,7 +8,7 @@ import Options.Applicative
 import GHC.Unit.Module (ModuleName, mkModuleName)
 
 data Options = Options {
-    envFile :: FilePath, 
+    pathToJsonFiles :: FilePath, 
     targetDecls :: FilePath, 
     useGraphViz :: Bool,
     graphVizFile :: FilePath,
@@ -23,10 +23,10 @@ getOpts = execParser ((parseOpts <**> helper) `info` fullDesc)
 parseOpts :: Parser Options
 parseOpts = Options
     <$> strOption
-        (   long "ghc-environment"
-        <>  metavar "GHCENVIRONMENT"
-        <>  short 'e'
-        <>  help "FilePath to the ghc environment file that came from e.g. running your cabal project with the flag --write-ghc-environment-files=always"
+        (   long "json-files"
+        <>  metavar "JSONFILES"
+        <>  short 'j'
+        <>  help "Filepath to directory with json files containing subgraphs"
         <>  showDefault
         <>  value "."
         )
@@ -41,7 +41,7 @@ parseOpts = Options
     <*> switch
         (   long "use-graphviz"
         <>  short 'g'
-        <>  help "Whether graphviz dot file is written. Specify filePath with graphviz-dot-path"
+        <>  help "Whether graphviz dot file is written. Specify filePath with --graphviz-dot-path"
         <>  showDefault
         )
     <*> strOption

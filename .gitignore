@@ -2,3 +2,5 @@ result*
 input*
 dist-newstyle/
 .ghc*
+test/
+src/Main
