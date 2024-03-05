@@ -19,8 +19,8 @@ collectDependencies fp = do
 
   
 
-  putStrLn $ "trying just: " ++ files !! 2
-  print =<< (eitherDecodeFileStrict (fp ++ "/" ++ head files) :: IO (Either String DependencyGraph))
+  --putStrLn $ "trying just: " ++ files !! 2
+  --print =<< (eitherDecodeFileStrict (fp ++ "/" ++ head files) :: IO (Either String DependencyGraph))
 
   let jsonFiles = filter isJsonFile files
       jsonPaths = map ((fp ++) . ("/" ++)) jsonFiles
@@ -29,7 +29,7 @@ collectDependencies fp = do
   case eitherSubgraphs of
     Left e -> error $ show e
     Right subGraphs -> do
-      print subGraphs
+      --print subGraphs
       let depGraph = foldr AdjMap.overlay mempty subGraphs
       return depGraph
   where
