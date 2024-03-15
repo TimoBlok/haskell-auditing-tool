@@ -30,7 +30,7 @@ import GHC.Data.FastString (unconsFS, unpackFS)
 import GHC.Utils.Outputable (Outputable (ppr), defaultSDocContext, hcat, showSDocOneLine)
 
 import Dependency ( Declaration(..), DependencyGraph )
-import GHC.IO (unsafePerformIO)
+import ReadableHelper
 
 -- | reduceDependencies tidy up the output a bit.
 -- Remove duplicate edge and merge top level nodes
@@ -109,23 +109,6 @@ getDependenciesFromCore genModule topVars coreBind = case coreBind of
         Type _type -> mempty
         Coercion _coer -> mempty
 
-    -- isDictionaryValue :: Var -> Bool
-    -- isDictionaryValue var =
-    --     let s = occNameString $ nameOccName $ varName var
-    --     in take 2 s == "$f"
-
-    -- specialise :: Module -> Var -> Var -> Declaration
-    -- specialise genModule fnVar dictVar =
-    --   let
-    --     decl = varDecl genModule dictVar
-    --     fnFS = occNameFS $ nameOccName $ varName fnVar
-
-    --     -- fromMaybe 
-    --     --   (error $ "specialisation failed" ++ occNameString (nameOccName $ varName fnVar) ++ occNameString (nameOccName $ varName dictVar)) $ 
-          
-    --   in
-    --     decl {declOccName = declOccName decl <> "_$c" <> fnFS}
-
     getBindDeps :: CoreBind -> [Declaration]
     getBindDeps = \case
         NonRec _b expr -> getExprDeps expr
@@ -152,6 +135,6 @@ mkGlobalDecl name = do
 mkDecl :: Module -> Name -> Declaration
 mkDecl genModule name = Declaration {declUnitId, declModuleName, declOccName}
   where
-    declUnitId = unitIdString (moduleUnitId genModule)
-    declModuleName = moduleNameString (moduleName genModule)
+    declUnitId = pkgNameH genModule
+    declModuleName = modNameH genModule
     declOccName = occNameString (nameOccName name)

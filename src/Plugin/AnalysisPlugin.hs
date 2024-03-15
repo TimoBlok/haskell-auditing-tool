@@ -2,11 +2,27 @@
 module Plugin.AnalysisPlugin (plugin) where
 
 import GHC.Plugins
-import System.Directory
+    ( Plugin(installCoreToDos),
+      Outputable(..),
+      GenModule(moduleName, moduleUnit),
+      Module,
+      defaultSDocContext,
+      showSDocOneLine,
+      putMsgS,
+      defaultPlugin,
+      liftIO,
+      CoreM,
+      CoreToDo(CoreDoPluginPass),
+      CommandLineOption,
+      ModGuts(mg_binds, mg_module) )
+import System.Directory ( listDirectory, removeFile )
+import Control.Monad ( forM_ )
+import Data.List ( init, dropWhileEnd, takeWhile )
+import Data.Char ( isDigit )
 
-import Core 
-import Dependency
-import Json
+import Core ( getDependenciesFromCoreBinds ) 
+import Json ( encodeFile )
+import ReadableHelper 
 
 
 plugin :: Plugin
@@ -16,8 +32,7 @@ plugin = defaultPlugin {
 
 install :: [CommandLineOption] -> [CoreToDo] -> CoreM [CoreToDo]
 install [absolutePath] todo = do 
-  liftIO $ putStrLn "hey there!"
-  return (CoreDoPluginPass "Find Dependencies" (pass absolutePath): todo)
+  return (CoreDoPluginPass "Find Dependencies" (pass absolutePath) : todo)
 install xs todo = do 
   putMsgS $ "incorrect input args: doing nothing. args: " ++ show xs
   putMsgS "Please provide an absolute path"
@@ -26,10 +41,10 @@ install xs todo = do
 pass :: FilePath -> ModGuts -> CoreM ModGuts
 pass absolutePath guts = do
   let dependencies = getDependenciesFromCoreBinds guts.mg_module guts.mg_binds
-  
-      moduleName = showSDocOneLine defaultSDocContext $ ppr guts.mg_module
-      path = absolutePath ++ "/" ++ moduleName ++ ".json"  
+
+      fileName = modNameU guts.mg_module
+      path = absolutePath ++ "/" ++ fileName ++ ".json"  
   liftIO $ encodeFile path dependencies
-  putMsgS $ "Another functional dependency subgraph for " ++ moduleName ++ " written to" ++ path
+  putMsgS $ "Another functional dependency subgraph for " ++ fileName ++ " written to" ++ path
 
   pure guts

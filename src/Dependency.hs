@@ -7,7 +7,7 @@
 module Dependency where 
 
 import Algebra.Graph.AdjacencyMap (AdjacencyMap)
-import GHC.Utils.Outputable (Outputable (ppr), defaultSDocContext, hcat, showSDocOneLine, IsLine (text))
+import GHC.Utils.Outputable (Outputable (ppr), defaultSDocContext, hcat, showSDocOneLine, text)
 
 import GHC.Generics ( Generic )
 
@@ -33,7 +33,7 @@ mkDeclaration unit mod occName = Declaration {
 
 instance Outputable Declaration where
     ppr decl =
-        hcat [{-text decl.declUnitId, ":",-}text decl.declModuleName, ".", text decl.declOccName]
+        hcat [text decl.declUnitId, ":",text decl.declModuleName, ".", text decl.declOccName]
 
 instance Show Declaration where
     show = showSDocOneLine defaultSDocContext . ppr

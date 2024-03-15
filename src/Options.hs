@@ -5,7 +5,6 @@ module Options (
     ) where 
 
 import Options.Applicative
-import GHC.Unit.Module (ModuleName, mkModuleName)
 
 data Options = Options {
     pathToJsonFiles :: FilePath, 
@@ -14,7 +13,7 @@ data Options = Options {
     graphVizFile :: FilePath,
     rootModules :: RootModules}
 
-type RootModules = [ModuleName]
+type RootModules = [String]
 
 getOpts :: IO Options
 getOpts = execParser ((parseOpts <**> helper) `info` fullDesc)
@@ -23,17 +22,17 @@ getOpts = execParser ((parseOpts <**> helper) `info` fullDesc)
 parseOpts :: Parser Options
 parseOpts = Options
     <$> strOption
-        (   long "json-files"
+        (   long "json"
+        <>  long "json-files"
         <>  metavar "JSONFILES"
-        <>  short 'j'
         <>  help "Filepath to directory with json files containing subgraphs"
         <>  showDefault
         <>  value "."
         )
     <*> strOption
-        (   long "target-decls"
+        (   long "tds"
+        <>  long "target-decls"
         <>  metavar "TARGETDECLS"
-        <>  short 't'
         <>  help "Txt file with the target function declerations to check whether anything depends on one of them"
         <>  showDefault
         <>  value "target-decls.txt"
@@ -52,9 +51,7 @@ parseOpts = Options
         <>  showDefault
         <>  value ""
         )
-    <*> some (mkModuleName <$> strOption
-        (   long "rootmodules"
-        <>  metavar "ROOTMODULES"
-        <>  short 'r'
+    <*> some (strArgument
+        (   metavar "ROOTMODULES"
         <>  help "the modules that will be analized"
         ))

@@ -17,11 +17,6 @@ collectDependencies fp = do
 
   when (null files) $ error "no json files found"
 
-  
-
-  --putStrLn $ "trying just: " ++ files !! 2
-  --print =<< (eitherDecodeFileStrict (fp ++ "/" ++ head files) :: IO (Either String DependencyGraph))
-
   let jsonFiles = filter isJsonFile files
       jsonPaths = map ((fp ++) . ("/" ++)) jsonFiles
 

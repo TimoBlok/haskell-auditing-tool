@@ -8,8 +8,12 @@ import Output ( TargetDecls, outputAnalysis )
 import Dependency (Declaration(Declaration), mkDeclaration)
 import Collect (collectDependencies)
 
+import GHC.IO.Encoding
+
 main :: IO ()
 main = do
+    setLocaleEncoding utf8
+
     opts <- getOpts
 
     targetDecls <- getTargetDecls opts.targetDecls
