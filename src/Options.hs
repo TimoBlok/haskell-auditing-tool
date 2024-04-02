@@ -11,6 +11,8 @@ data Options = Options {
     targetDecls :: FilePath, 
     useGraphViz :: Bool,
     graphVizFile :: FilePath,
+    useCypher :: Bool,
+    cypherFile :: FilePath,
     rootModules :: RootModules}
 
 type RootModules = [String]
@@ -39,19 +41,30 @@ parseOpts = Options
         )
     <*> switch
         (   long "use-graphviz"
-        <>  short 'g'
         <>  help "Whether graphviz dot file is written. Specify filePath with --graphviz-dot-path"
         <>  showDefault
         )
     <*> strOption
         (   long "graphviz-dot-path"
         <>  metavar "DOTPATH"
-        <>  short 'd'
         <>  help "The prefered path of where the .dot file will be stored"
         <>  showDefault
         <>  value ""
         )
-    <*> some (strArgument
+    <*> switch
+        (   long "cypher"
+        <>  long "neo4j"
+        <>  help "Whether cypher file is written, which can be loaded into neo4j. Specify filePath with --cypher-path"
+        <>  showDefault
+        )
+    <*> strOption
+        (   long "cypher-path"
+        <>  metavar "CYPHERPATH"
+        <>  help "The prefered path of where the .cypher file will be stored"
+        <>  showDefault
+        <>  value ""
+        )
+    <*> many (strArgument
         (   metavar "ROOTMODULES"
         <>  help "the modules that will be analized"
         ))

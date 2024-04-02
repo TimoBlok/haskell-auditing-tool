@@ -15,6 +15,7 @@ import GHC.Generics ( Generic )
 type DependencyGraph = AdjacencyMap Declaration
 
 -- | stores all the data we need to describe a funtion declaration
+-- no hashes included
 data Declaration = Declaration
     { declModuleName :: String
     , declUnitId :: String
@@ -33,7 +34,7 @@ mkDeclaration unit mod occName = Declaration {
 
 instance Outputable Declaration where
     ppr decl =
-        hcat [text decl.declUnitId, ":",text decl.declModuleName, ".", text decl.declOccName]
+        hcat [text decl.declUnitId, "." ,text decl.declModuleName, ".", text decl.declOccName]
 
 instance Show Declaration where
     show = showSDocOneLine defaultSDocContext . ppr

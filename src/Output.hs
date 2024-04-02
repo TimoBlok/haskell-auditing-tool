@@ -29,15 +29,7 @@ outputAnalysis :: TargetDecls -> Options -> DependencyGraph -> IO ()
 outputAnalysis targetDecls options depGraph = do
     putStrLn "Printing the dependency graph:"
 
-    let isRootModule m = m `elem` options.rootModules
-
-        -- the decls that are the root decls with non empty dependencies
-        rootDecls = filter (\decl ->
-          isRootModule decl.declModuleName &&
-          not (isLeaf decl depGraph))
-            (AdjMap.vertexList depGraph)
-
-        blacklist       = Set.fromList targetDecls
+    let blacklist       = Set.fromList targetDecls
         trimmedDepGraph = keepRelevantNodes blacklist $ removeSelfLoops depGraph
         forest          = Alg.bfsForest trimmedDepGraph rootDecls
         whitelist       = AdjMap.vertexSet $ AdjMap.forest forest
@@ -46,13 +38,23 @@ outputAnalysis targetDecls options depGraph = do
     -- print blacklist
     -- print $ Set.intersection blacklist $ AdjMap.vertexSet depGraph
 
-    putStrLn "Drawing Forest:\n"
+    -- putStrLn "Drawing Forest:\n"
 
-    printForest forest
+    -- printForest forest
 
     putStrLn "Analysis done!"
-
     handleGraphViz options finalDepGraph
+    handleCypher options finalDepGraph
+  where 
+    -- the decls that are the root decls with non empty dependencies
+    rootDecls :: [Declaration]
+    rootDecls = filter (\decl ->
+      isRootModule decl.declModuleName &&
+      not (isLeaf decl depGraph))
+        (AdjMap.vertexList depGraph)
+        
+    isRootModule :: String -> Bool
+    isRootModule m = m `elem` options.rootModules
 
 
 --------------------
@@ -143,6 +145,57 @@ dumpGraphViz fp depGraph = do
     showGraphVizEdge :: (Declaration, Declaration) -> String
     showGraphVizEdge (v1, v2) = concat ["\"", v1.declOccName, "\" -> \"", v2.declOccName, "\";\n"]
 
+handleCypher :: Options -> DependencyGraph -> IO ()
+handleCypher options depGraph = do 
+  when options.useCypher $ do
+    let basePath = options.cypherFile ++ intercalate "-" (map (last . splitOn ".") options.rootModules)
+        usedTargetDecls = takeBaseName options.targetDecls 
+        graphPath = basePath ++ "." ++ usedTargetDecls ++ ".cypher"
+
+    putStrLn "Outputting graph to: "
+    putStrLn graphPath
+    dumpCypher graphPath depGraph
+
+-- | Writes to a .dot file in the dot language
+dumpCypher :: FilePath -> DependencyGraph -> IO ()
+dumpCypher fp depGraph = do
+  writeFile fp $
+    (concatMap showCypherNode $ AdjMap.vertexList depGraph)
+    ++
+    (concatMap showCypherEdge $ AdjMap.edgeList depGraph) 
+  where
+    showCypherNode :: Declaration -> String
+    showCypherNode decl = "Create (" ++ mkCypherVariable decl ++ ":Declaration {" ++ showCypherProps decl ++ "})\n"
+
+    -- note how the values are inside quotes already
+    showCypherProps :: Declaration -> String
+    showCypherProps decl = "name:"     ++ quote decl.declOccName 
+                        ++ ", module:" ++ quote decl.declModuleName
+                        ++ ", unit:"   ++ quote decl.declUnitId
+
+    quote :: String -> String
+    quote s | '\'' `elem` s = "\"" ++ s ++ "\""
+            | otherwise     = "\'" ++ s ++ "\'"
+
+    showCypherEdge :: (Declaration, Declaration) -> String
+    showCypherEdge (v1, v2) = "Create (" ++ mkCypherVariable v1 ++ ")-[:DEPENDS_ON]->" ++ "(" ++ mkCypherVariable v2 ++ ")\n"
+
+    -- Names with non alphanumeric characters will have to escaped with backticks
+    -- (Though underscore is allowed).
+    -- Neo4j recommends doing this only if necessary.
+    -- Hence, we are not escaping everything and we check instead.
+    maybeQuotes :: String -> String
+    maybeQuotes name | all (\c -> isAlphaNum c || c=='_') name = name 
+                     | otherwise = "`" ++ name ++ "`"
+
+    -- variable can only be alphanum and underscores
+    mkCypherVariable :: Declaration -> String 
+    mkCypherVariable = maybeQuotes . map (dotToUnderscore) . show
+
+    dotToUnderscore :: Char -> Char
+    dotToUnderscore '.' = '_'
+    dotToUnderscore c   = c
+
 --------------------
 -- debugging
 --------------------
@@ -154,5 +207,4 @@ dumpRootDeclDeps rootDecls callGraph = forM_ rootDecls printTargetDecl
     printTargetDecl decl = do
         let deps = Alg.reachable callGraph decl
             onlyLeaves = filter (null . (`AdjMap.postSet` callGraph)) deps
-
         unless (null deps) $ putStrLn $ show decl <> ": " <> intercalate ", " (show <$> onlyLeaves)
