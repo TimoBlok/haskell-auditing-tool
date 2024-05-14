@@ -17,12 +17,16 @@ import Data.Map.Strict qualified as Map
 import Data.Maybe ( isJust, fromMaybe )
 import Data.Set (Set)
 import Data.Set qualified as Set
+import GHC.Builtin.Names (ioTyConName)
 import GHC.Core (Alt (..), Bind (..), CoreBind, Expr (..))
-import GHC.Core.Type (Var(..))
+import GHC.Core.Type (Var(..), splitTyConApp_maybe, splitForAllTyCoVars, splitFunTys)
+import GHC.Core.TyCon (tyConName)
+import GHC.Core.TyCo.Rep (Type)
 import GHC.Generics (Generic)
 import GHC.Types.Name (Name, OccName (occNameFS), nameModule_maybe, nameOccName)
 import GHC.Types.Name.Occurrence (occNameString)
-import GHC.Types.Var (varName)
+import GHC.Types.Var (varName, idDetails)
+import GHC.Types.Id.Info (IdDetails (..))
 import GHC.Unit (moduleNameFS)
 import GHC.Unit.Module (Module, moduleUnitId, moduleNameString)
 import GHC.Unit.Types (GenModule (moduleName), UnitId (..), unitIdString)
@@ -71,7 +75,7 @@ getDependenciesFromCore :: Module -> Set Var -> CoreBind -> DependencyGraph
 getDependenciesFromCore genModule topVars coreBind = case coreBind of
 
     NonRec b expr ->
-      let decl = mkDecl genModule (varName b)
+      let decl = mkDecl genModule (varName b) $ hasIOResultType b
           deps = getExprDeps expr
         in
           AdjMap.star decl deps
@@ -94,12 +98,6 @@ getDependenciesFromCore genModule topVars coreBind = case coreBind of
               otherwise ->
                 []
         Lit _lit -> mempty
-
-        -- -- specialise type class function calls
-        -- App (App (App (Var fnVar) (Type _)) (Var dictVar)) arg
-        --   | isDictionaryValue dictVar && (isExternalVar dictVar || dictVar `Set.member` topVars)
-        --     -> specialise genModule fnVar dictVar : getExprDeps (Var fnVar) <> getExprDeps arg
-
         App expr arg -> foldMap getExprDeps [expr, arg]
         Lam _b expr -> getExprDeps expr
         Let bind expr -> getBindDeps bind <> getExprDeps expr
@@ -119,22 +117,43 @@ getDependenciesFromCore genModule topVars coreBind = case coreBind of
         Alt _altCon _bs expr -> getExprDeps expr
 
 varDecl :: Module -> Var -> Declaration
-varDecl genModule var = case mkGlobalDecl name of
+varDecl genModule var = case mkGlobalDecl name isWorthKeepingTrackOf of
     Just decl -> decl
-    Nothing -> mkDecl genModule name
+    Nothing -> mkDecl genModule name isWorthKeepingTrackOf
   where
-    name = varName var
+    isWorthKeepingTrackOf = hasIOResultType var || isFFICall var
+    name  = varName var
 
-mkGlobalDecl :: Name -> Maybe Declaration
-mkGlobalDecl name = do
+
+mkGlobalDecl :: Name -> Bool -> Maybe Declaration
+mkGlobalDecl name isIO = do
     genModule <- nameModule_maybe name
-    pure $ mkDecl genModule name
-
+    pure $ mkDecl genModule name isIO
 
 -- | Create a node for the call graph.
-mkDecl :: Module -> Name -> Declaration
-mkDecl genModule name = Declaration {declUnitId, declModuleName, declOccName}
+mkDecl :: Module -> Name -> Bool -> Declaration
+mkDecl genModule name declIsIO = Declaration {declUnitId, declModuleName, declOccName, declIsIO}
   where
     declUnitId = pkgNameH genModule
     declModuleName = modNameH genModule
     declOccName = occNameString (nameOccName name)
+
+isFFICall :: Var -> Bool 
+isFFICall var | (FCallId _) <- idDetails var = True
+              | otherwise                    = False
+
+hasIOResultType :: Var -> Bool
+hasIOResultType var = 
+  let 
+    resTy = findResType $ varType var
+  in 
+    case splitTyConApp_maybe resTy of 
+      Nothing -> False
+      Just (tyCon, _) -> tyConName tyCon == ioTyConName
+
+-- | whole type -> (typeOrValueArgs, resultType)
+findResType :: Type -> Type
+findResType ty
+  | (tyCoVars@(_:_), resTy)    <- splitForAllTyCoVars ty = findResType resTy
+  | (scaledTypes@(_:_), resTy) <- splitFunTys ty         = findResType resTy
+  | otherwise                                            = ty

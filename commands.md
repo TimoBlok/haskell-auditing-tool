@@ -1,6 +1,6 @@
 # Commands
 
-## installing and running hpt
+## Installing and running hpt
 
 `cabal install --lib lib:haskell-permission-tool --force-reinstall`
 
@@ -8,10 +8,22 @@
 
 `hpt --help`
 
-`hpt --neo4j --json subgraphs Main`
+`hpt --neo4j --json /path/to/subgraphs/ Main`
 
 
-## Neo4j
+# Neo4j
+
+## Installing and running neo4j with nix
+
+```
+NEO4J_HOME=$(mktemp -d) nix run nixpkgs#neo4j --impure console
+```
+
+```
+nix run nixpkgs#firefox
+```
+
+## Example Cypher queries
 
 To find the subgraph below a certain declaration:
 
@@ -34,5 +46,12 @@ If you only want to know which permissions a certain declaration needs (aka the 
 ```
 MATCH (saveP:Declaration {name:"exampleFunction", module:"ExampleModule", unit:"example-package"})-[*0..]->(decl)
 WHERE Not (decl)-->() 
+RETURN decl
+```
+
+Find all paths leading to a certain node:
+
+```
+MATCH (decl:Declaration {name:"exampleFunction", module:"ExampleModule", unit:"example-package"})-[*0..]->(n:Declaration {name:"MakeTracer"})
 RETURN decl
 ```

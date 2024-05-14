@@ -33,5 +33,5 @@ getTargetDecls fp = do
     where 
         parseTargetDecls :: String -> Declaration
         parseTargetDecls line = case words line of 
-            (unit:mod:occName:xs) -> mkDeclaration unit mod occName
+            (unit:mod:occName:xs) -> mkDeclaration unit mod occName False
             _ -> error "target declaration is in the wrong format! Expecting:\n\"unitName moduleName occName --text after fourth space is ignored"

@@ -15,7 +15,7 @@ import GHC.Plugins
       CoreToDo(CoreDoPluginPass),
       CommandLineOption,
       ModGuts(mg_binds, mg_module) )
-import System.Directory ( listDirectory, removeFile )
+import System.Directory ( listDirectory, removeFile, removeDirectoryRecursive, createDirectory, createDirectoryIfMissing )
 import Control.Monad ( forM_ )
 import Data.List ( init, dropWhileEnd, takeWhile )
 import Data.Char ( isDigit )
@@ -40,11 +40,18 @@ install xs todo = do
 
 pass :: FilePath -> ModGuts -> CoreM ModGuts
 pass absolutePath guts = do
+      -- read the core binds
   let dependencies = getDependenciesFromCoreBinds guts.mg_module guts.mg_binds
 
-      fileName = modNameU guts.mg_module
+      -- create filepath
+  let fileName = modNameU guts.mg_module
       path = absolutePath ++ "/" ++ fileName ++ ".json"  
+
+  -- write to file
   liftIO $ encodeFile path dependencies
+
+  -- log
   putMsgS $ "Another functional dependency subgraph for " ++ fileName ++ " written to" ++ path
 
+  -- don't change the program
   pure guts

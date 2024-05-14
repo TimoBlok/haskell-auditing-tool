@@ -20,17 +20,20 @@ data Declaration = Declaration
     { declModuleName :: String
     , declUnitId :: String
     , declOccName :: String
+    , declIsIO :: Bool
     } deriving (Generic, Eq)
 
 type UnitString = String
 type ModuleString = String
 type OccNameString = String
+type IsIO = Bool
 
-mkDeclaration :: UnitString -> ModuleString -> OccNameString -> Declaration
-mkDeclaration unit mod occName = Declaration {
+mkDeclaration :: UnitString -> ModuleString -> OccNameString -> IsIO -> Declaration
+mkDeclaration unit mod occName isIO = Declaration {
     declUnitId = unit, 
     declModuleName = mod, 
-    declOccName = occName}
+    declOccName = occName, 
+    declIsIO = isIO}
 
 instance Outputable Declaration where
     ppr decl =
