@@ -21,7 +21,7 @@ data Declaration = Declaration
     , declUnitId :: String
     , declOccName :: String
     , declIsIO :: Bool
-    } deriving (Generic, Eq, Read)
+    } deriving (Generic, Eq)
 
 type UnitString = String
 type ModuleString = String

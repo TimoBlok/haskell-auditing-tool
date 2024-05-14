@@ -29,14 +29,13 @@ library
   exposed-modules:
       Core
     , Dependency
-    , Graph.Query
-    , Graph.Trim
     , Json
     , Main
     , Options
     , Output
     , Plugin.AnalysisPlugin
     , ReadableHelper
+    , TrimGraph
 
 executable hpt
   import:        common
@@ -44,9 +43,8 @@ executable hpt
   other-modules:
       Core
     , Dependency
-    , Graph.Trim
-    , Graph.Query
     , Json
     , Options
     , Output
     , ReadableHelper
+    , TrimGraph

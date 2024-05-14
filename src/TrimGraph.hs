@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedRecordDot #-}
-module Graph.Trim (
+module TrimGraph (
   trimGraph
 ) where 
 
@@ -34,15 +34,22 @@ trimGraph options = removeSomeLoops . trimFromRoots . trimFromTargets
       in 
         trimDepGraphWithWhitelist whitelist depGraph'
 
+    -- decl is part either part of specified module or unit, or nothing was specified
     isRootDecl :: Declaration -> Bool
     isRootDecl decl = 
-      decl.declUnitId     `elem` options.rootUnits || 
-      decl.declModuleName `elem` options.rootModules
+      decl.declUnitId     `elem` options.rootUnits   || 
+      decl.declModuleName `elem` options.rootModules ||
+      show decl           `elem` options.query       ||
+      (null options.rootUnits   && 
+       null options.rootModules &&
+       null options.query)
 
+    -- decl is part either part of specified module or unit, or nothing was specified
     isTargetDecl :: Declaration -> Bool
     isTargetDecl decl = 
-      decl.declUnitId     `elem` options.targetUnits || 
-      decl.declModuleName `elem` options.targetModules
+      decl.declUnitId     `elem` options.targetUnits   || 
+      decl.declModuleName `elem` options.targetModules || 
+      (null options.targetUnits && null options.targetUnits)
 
 -- removes the loops of 1 node and loops of 2 nodes
 removeSomeLoops :: DependencyGraph -> DependencyGraph

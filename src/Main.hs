@@ -7,7 +7,7 @@ import Options ( Options(..), getOpts )
 import Output ( outputAnalysis ) 
 import Dependency (Declaration(Declaration), mkDeclaration)
 import Json (collectDependencies)
-import Graph.Trim 
+import TrimGraph 
 
 import GHC.IO.Encoding
 

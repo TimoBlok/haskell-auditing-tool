@@ -17,7 +17,7 @@ data Options = Options {
     rootUnits :: [String],
     targetModules :: [String],
     targetUnits :: [String],
-    query :: [Declaration]}
+    query :: [String]}
 
 getOpts :: IO Options
 getOpts = execParser ((parseOpts <**> helper) `info` fullDesc)
