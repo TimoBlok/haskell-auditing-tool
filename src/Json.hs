@@ -39,10 +39,11 @@ collectDependencies :: FilePath -> IO DependencyGraph
 collectDependencies fp = do
   files <- listDirectory fp
 
-  when (null files) $ error "no json files found"
-
   let jsonFiles = filter isJsonFile files
-      jsonPaths = map ((fp ++) . ("/" ++)) jsonFiles
+
+  when (null jsonFiles) $ error "no json files found"
+
+  let jsonPaths = map ((fp ++) . ("/" ++)) jsonFiles
 
   eitherSubgraphs <- sequenceA <$> forM jsonPaths eitherDecodeFileStrict
   case eitherSubgraphs of

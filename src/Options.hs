@@ -9,15 +9,16 @@ import Options.Applicative
 
 data Options = Options {
     pathToJsonFiles :: FilePath, 
-    useGraphViz :: Bool,
-    graphVizFile :: FilePath,
-    useCypher :: Bool,
-    cypherFile :: FilePath,
-    rootModules :: [String],
-    rootUnits :: [String],
-    targetModules :: [String],
-    targetUnits :: [String],
-    query :: [String]}
+    useGraphViz     :: Bool,
+    graphVizFile    :: FilePath,
+    useCypher       :: Bool,
+    cypherFile      :: FilePath,
+    trim            :: Bool,
+    rootModules     :: [String],
+    rootUnits       :: [String],
+    targetModules   :: [String],
+    targetUnits     :: [String],
+    query           :: [String]}
 
 getOpts :: IO Options
 getOpts = execParser ((parseOpts <**> helper) `info` fullDesc)
@@ -58,6 +59,11 @@ parseOpts = Options
         <>  showDefault
         <>  value ""
         )
+    <*> switch
+        (   long "trim"
+        <>  help "Whether the graph is trimmed based on specified roots, targets, or queries"
+        <>  showDefault
+        )
     <*> option auto
         (   long "rm's"
         <>  metavar "ROOTMODULES"
@@ -89,7 +95,7 @@ parseOpts = Options
     <*> option auto
         (   long "query"
         <>  metavar "QUERY"
-        <>  help "get estimated permissions required by given declarations"
+        <>  help "Get estimated permissions required by given declarations. In the form of: unit.Module1.Module2.occname"
         <>  showDefault
         <>  value []
         ) 

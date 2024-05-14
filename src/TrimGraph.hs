@@ -16,6 +16,7 @@ type Blacklist = Set Declaration
 type RelevantNodes = Set Declaration
 
 trimGraph :: Options -> DependencyGraph -> DependencyGraph
+trimGraph Options {trim = False} = id
 trimGraph options = removeSomeLoops . trimFromRoots . trimFromTargets 
   where 
     trimFromTargets :: DependencyGraph -> DependencyGraph
@@ -34,7 +35,9 @@ trimGraph options = removeSomeLoops . trimFromRoots . trimFromTargets
       in 
         trimDepGraphWithWhitelist whitelist depGraph'
 
-    -- decl is part either part of specified module or unit, or nothing was specified
+    -- decl is part of specified module or unit, 
+    -- decl is one of the queries, 
+    -- or no root was specified
     isRootDecl :: Declaration -> Bool
     isRootDecl decl = 
       decl.declUnitId     `elem` options.rootUnits   || 
@@ -44,7 +47,7 @@ trimGraph options = removeSomeLoops . trimFromRoots . trimFromTargets
        null options.rootModules &&
        null options.query)
 
-    -- decl is part either part of specified module or unit, or nothing was specified
+    -- decl is either part of specified module or unit, or no target was specified
     isTargetDecl :: Declaration -> Bool
     isTargetDecl decl = 
       decl.declUnitId     `elem` options.targetUnits   || 
