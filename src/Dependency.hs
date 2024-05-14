@@ -21,7 +21,7 @@ data Declaration = Declaration
     , declUnitId :: String
     , declOccName :: String
     , declIsIO :: Bool
-    } deriving (Generic, Eq)
+    } deriving (Generic, Eq, Read)
 
 type UnitString = String
 type ModuleString = String
@@ -47,4 +47,3 @@ instance Ord Declaration where
         compare d1.declModuleName d2.declModuleName
             <> compare d1.declUnitId d2.declUnitId
             <> compare d1.declOccName d2.declOccName
-

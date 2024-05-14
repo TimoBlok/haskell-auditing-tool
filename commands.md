@@ -49,9 +49,9 @@ WHERE Not (decl)-->()
 RETURN decl
 ```
 
-Find all paths leading to a certain node:
+Find all paths that lead from example-package to a certain node:
 
 ```
-MATCH (decl:Declaration {name:"exampleFunction", module:"ExampleModule", unit:"example-package"})-[*0..]->(n:Declaration {name:"MakeTracer"})
+MATCH (decl:Declaration {unit:"example-package"})-[*0..]->(n:Declaration {name:"exampleName"})
 RETURN decl
 ```

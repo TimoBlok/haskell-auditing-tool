@@ -10,42 +10,43 @@ common common
   hs-source-dirs:   src 
   build-depends:
       algebraic-graphs
+    , aeson
     , base < 5
     , containers
-    , optparse-applicative
+    , directory
     , exceptions
+    , filepath
     , ghc
     , ghc-paths
     , ghc-prim
-    , transformers
-    , directory
+    , optparse-applicative
     , split
-    , aeson
+    , transformers
     , text
-    , filepath
 
 library
   import: common 
   exposed-modules:
-      Main
-    , Core
+      Core
     , Dependency
+    , Graph.Query
+    , Graph.Trim
+    , Json
+    , Main
     , Options
     , Output
-    , Json
-    , Collect
-    , ReadableHelper
     , Plugin.AnalysisPlugin
-
+    , ReadableHelper
 
 executable hpt
   import:        common
   main-is:       Main.hs
   other-modules:
-    , Core
+      Core
     , Dependency
+    , Graph.Trim
+    , Graph.Query
+    , Json
     , Options
     , Output
-    , Json
-    , Collect
     , ReadableHelper

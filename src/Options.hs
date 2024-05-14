@@ -1,21 +1,23 @@
 module Options (
     getOpts,
     Options (..),
-    RootModules
     ) where 
+
+import Dependency (Declaration (..))
 
 import Options.Applicative
 
 data Options = Options {
     pathToJsonFiles :: FilePath, 
-    targetDecls :: FilePath, 
     useGraphViz :: Bool,
     graphVizFile :: FilePath,
     useCypher :: Bool,
     cypherFile :: FilePath,
-    rootModules :: RootModules}
-
-type RootModules = [String]
+    rootModules :: [String],
+    rootUnits :: [String],
+    targetModules :: [String],
+    targetUnits :: [String],
+    query :: [Declaration]}
 
 getOpts :: IO Options
 getOpts = execParser ((parseOpts <**> helper) `info` fullDesc)
@@ -30,14 +32,6 @@ parseOpts = Options
         <>  help "Filepath to directory with json files containing subgraphs"
         <>  showDefault
         <>  value "."
-        )
-    <*> strOption
-        (   long "tds"
-        <>  long "target-decls"
-        <>  metavar "TARGETDECLS"
-        <>  help "Txt file with the target function declerations to check whether anything depends on one of them"
-        <>  showDefault
-        <>  value "target-decls.txt"
         )
     <*> switch
         (   long "use-graphviz"
@@ -64,7 +58,38 @@ parseOpts = Options
         <>  showDefault
         <>  value ""
         )
-    <*> many (strArgument
-        (   metavar "ROOTMODULES"
-        <>  help "the modules that will be analized"
-        ))
+    <*> option auto
+        (   long "rm's"
+        <>  metavar "ROOTMODULES"
+        <>  help "output will only consider the part of the graph that start at one of these modules"
+        <>  showDefault
+        <>  value []
+        ) 
+    <*> option auto
+        (   long "ru's"
+        <>  metavar "ROOTUNITS"
+        <>  help "output will only consider the part of the graph that start at one of these units"
+        <>  showDefault
+        <>  value []
+        ) 
+    <*> option auto
+        (   long "tm's"
+        <>  metavar "TARGETMODULES"
+        <>  help "output will only consider the part of the graph that end at one of these modules"
+        <>  showDefault
+        <>  value []
+        ) 
+    <*> option auto
+        (   long "tu's"
+        <>  metavar "TARGETUNITS"
+        <>  help "output will only consider the part of the graph that end at one of these units"
+        <>  showDefault
+        <>  value []
+        ) 
+    <*> option auto
+        (   long "query"
+        <>  metavar "QUERY"
+        <>  help "get estimated permissions required by given declarations"
+        <>  showDefault
+        <>  value []
+        ) 
