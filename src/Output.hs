@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 
+-- | Responsible for handling output, such as neo4j cypher code
 module Output where
 
 import qualified Algebra.Graph.AdjacencyMap as AdjMap
@@ -17,7 +18,6 @@ outputAnalysis :: Options -> DependencyGraph -> IO ()
 outputAnalysis options depGraph = do
     handleGraphViz options depGraph
     handleCypher options depGraph
-  where
 
 handleGraphViz :: Options -> DependencyGraph -> IO ()
 handleGraphViz options depGraph = do
@@ -105,16 +105,3 @@ personalisedFileName options =
     final             = dropWhileEnd (== '_') usedInput
   in
     "Graph" ++ final
-
---------------------
--- debugging
---------------------
-
--- dumpRootDeclDeps :: [Declaration] -> DependencyGraph -> IO ()
--- dumpRootDeclDeps rootDecls callGraph = forM_ rootDecls printTargetDecl
---   where
---     printTargetDecl :: Declaration -> IO ()
---     printTargetDecl decl = do
---         let deps = Alg.reachable callGraph decl
---             onlyLeaves = filter (null . (`AdjMap.postSet` callGraph)) deps
---         unless (null deps) $ putStrLn $ show decl <> ": " <> intercalate ", " (show <$> onlyLeaves)

@@ -1,4 +1,7 @@
 {-# LANGUAGE OverloadedRecordDot #-}
+
+-- | the plugin responsible for analysing the Core representation
+-- and turning it into a call graph (one subgraph per module)
 module Plugin.AnalysisPlugin (plugin) where
 
 import GHC.Plugins
@@ -22,10 +25,9 @@ import Control.Monad ( forM_ )
 import Data.List ( init, dropWhileEnd, takeWhile )
 import Data.Char ( isDigit )
 
-import Core ( getDependenciesFromCoreBinds ) --, getTopVars ) 
+import Core ( getDependenciesFromCoreBinds )
 import Json ( encodeFile )
 import ReadableHelper 
-
 
 plugin :: Plugin
 plugin = defaultPlugin {

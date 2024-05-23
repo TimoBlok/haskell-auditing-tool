@@ -38,7 +38,6 @@ import Dependency ( Declaration(..), DependencyGraph )
 import ReadableHelper
 
 -- | reduceDependencies tidy up the output a bit.
--- Remove duplicate edge and merge top level nodes
 reduceDependencies :: DependencyGraph -> DependencyGraph
 reduceDependencies = AdjMap.induce isValuable
   where
@@ -92,7 +91,7 @@ getDependenciesFromCore genModule topVars coreBind = case coreBind of
     getExprDeps :: CoreExpr -> [Declaration]
     getExprDeps = \case
         Var var
-            | -- Only track external or top level vars
+            | -- Only track external or top level vars or ffi calls
               isExternalVar var || var `Set.member` topVars || isFFICall var ->
                 [varDecl genModule var]
             | -- And ignore local or shadow vars
@@ -117,6 +116,7 @@ getDependenciesFromCore genModule topVars coreBind = case coreBind of
     getAltDeps = \case
         Alt _altCon _bs expr -> getExprDeps expr
 
+-- | turns a var into declaration
 varDecl :: Module -> Var -> Declaration
 varDecl genModule var = case mkGlobalDecl name isWorthKeepingTrackOf of
     Just decl -> decl
@@ -138,7 +138,7 @@ mkDecl genModule name declIsIO = Declaration {declUnitId, declModuleName, declOc
     declUnitId = pkgNameH genModule
     declModuleName = modNameH genModule
     declOccName = pps name --occNameString (nameOccName name)
-    -- short term fix ^ pps adds a unique suffix, might want to add a unique as attribute later
+    -- short term fix ^ `pps` adds a unique suffix, might want to add a unique as attribute later
 
 isFFICall :: Var -> Bool 
 isFFICall var | (FCallId _) <- idDetails var = True
@@ -153,23 +153,9 @@ hasIOResultType var =
       Nothing -> False
       Just (tyCon, _) -> tyConName tyCon == ioTyConName
 
--- | whole type -> (typeOrValueArgs, resultType)
+-- | "Int -> IO Int" => "IO Int"
 findResType :: Type -> Type
 findResType ty
   | (tyCoVars@(_:_), resTy)    <- splitForAllTyCoVars ty = findResType resTy
   | (scaledTypes@(_:_), resTy) <- splitFunTys ty         = findResType resTy
   | otherwise                                            = ty
-
--- instance Show IdDetails where 
---   show VanillaId = "VanillaId"
---   show RecSelId {} = "RecSelId"
---   show (DataConWorkId _) = "DataConWorkId"
---   show (DataConWrapId _) = "DataConWrapId"
---   show (ClassOpId _ _) = "ClassOpId"
---   show (PrimOpId _ _) = "PrimOpId"
---   show (FCallId _) = "FCallId"
---   show (TickBoxOpId _) = "TickBoxOpId"
---   show (DFunId _) = "DFunId"
---   show CoVarId = "CoVarId"
---   show (JoinId _ _) = " JoinId"
---   show (WorkerLikeId _) = " WorkerLikeId"

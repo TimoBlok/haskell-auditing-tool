@@ -1,4 +1,7 @@
 {-# LANGUAGE OverloadedRecordDot #-}
+
+-- | Responsible for trimming the graph down if specified with options
+-- helps keep the graph small when visualisation tools are too slow the entire graph
 module TrimGraph (
   trimGraph
 ) where 
@@ -36,10 +39,6 @@ trimGraph options depGraph = removeSomeLoops . trimWithMiddleUnits . trimFromRoo
       in 
         trimDepGraphWithWhitelist whitelist depGraph'
 
-    trimWithMiddleUnits :: DependencyGraph -> DependencyGraph
-    trimWithMiddleUnits depGraph' | null options.middleUnits = depGraph'
-                                  | otherwise = trimDepGraphWithWhitelist declsFromAndToMiddleUnits depGraph'
-
     getDeclsWithPredicate :: (Declaration -> Bool) -> DependencyGraph -> Set Declaration
     getDeclsWithPredicate p = Set.filter p . AdjMap.vertexSet
 
@@ -61,7 +60,13 @@ trimGraph options depGraph = removeSomeLoops . trimWithMiddleUnits . trimFromRoo
       decl.declUnitId     `elem` options.targetUnits       || 
       decl.declModuleName `elem` options.targetModules     ||
       (null options.targetUnits && null options.targetUnits)
+    
+    -- keep all decls which lay on a path through specified "middleUnits"
+    trimWithMiddleUnits :: DependencyGraph -> DependencyGraph
+    trimWithMiddleUnits depGraph' | null options.middleUnits = depGraph'
+                                  | otherwise = trimDepGraphWithWhitelist declsFromAndToMiddleUnits depGraph'
 
+    -- find all decls which lay on a path through specified "middleUnits"
     declsFromAndToMiddleUnits :: Set Declaration
     declsFromAndToMiddleUnits = dependenciesOfMiddleUnits depGraph `Set.union` dependenciesOfMiddleUnits (AdjMap.transpose depGraph)
     
@@ -71,18 +76,6 @@ trimGraph options depGraph = removeSomeLoops . trimWithMiddleUnits . trimFromRoo
         middleDecls = Set.toList $ getDeclsWithPredicate (\d -> d.declUnitId `elem` options.middleUnits) depGraph'
       in 
         Set.fromList $ concatMap Tree.flatten $ Alg.bfsForest depGraph' middleDecls
-
--- removeDictArgs :: DependencyGraph -> DependencyGraph
--- removeDictArgs depGraph = 
---   let 
---     isDictArg = (== "$f") . take 2 . declOccName
-
---     removeAndStitch :: (Declaration, Declaration) -> [(Declaration, Declaration)]     
---     removeAndStitch (decl1,decl2) | isDictArg decl1 = concatMap removeAndStitch $ zip (Set.toList $ AdjMap.preSet decl1 depGraph) (repeat decl2)
---                                   | isDictArg decl2 = concatMap removeAndStitch $ zip (repeat decl1) (Set.toList $ AdjMap.preSet decl1 depGraph)
---                                   | otherwise       = [(decl1,decl2)]
---   in 
---     AdjMap.edges $ concatMap removeAndStitch $ AdjMap.edgeList depGraph 
 
 -- removes the loops of 1 node and loops of 2 nodes
 removeSomeLoops :: DependencyGraph -> DependencyGraph

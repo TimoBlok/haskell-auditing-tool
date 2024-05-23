@@ -1,3 +1,5 @@
+
+-- | Responsible for dealing with JSON
 module Json (
   encodeFile,
   eitherDecodeFileStrict,
