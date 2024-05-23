@@ -4,3 +4,4 @@ dist-newstyle/
 .ghc*
 test/
 src/Main
+.vscode/

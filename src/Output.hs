@@ -5,7 +5,7 @@ module Output where
 
 import qualified Algebra.Graph.AdjacencyMap as AdjMap
 import Control.Monad ( unless, forM_, when )
-import Data.List ( intercalate, nub )
+import Data.List ( intercalate, nub, dropWhileEnd )
 import Data.List.Split ( splitOn )
 import Data.Char ( isAlphaNum )
 
@@ -98,11 +98,13 @@ personalisedFileName options =
   let  
     usedRootModules   = intercalate "." $ map (last . splitOn ".") options.rootModules
     usedRootUnits     = intercalate "."  options.rootUnits
-    usedtargetModules = intercalate "." $ map (last . splitOn ".") options.targetModules
-    usedtargetUnits   = intercalate "."  options.targetUnits
-    usedInput         = intercalate "_" [usedRootModules, usedRootUnits, usedtargetModules, usedtargetUnits]
+    usedTargetModules = intercalate "." $ map (last . splitOn ".") options.targetModules
+    usedTargetUnits   = intercalate "."  options.targetUnits
+    usedMiddleUnits   = intercalate "."  options.middleUnits
+    usedInput         = "_" ++ intercalate "_" [usedRootModules, usedRootUnits, usedTargetModules, usedTargetUnits, usedMiddleUnits]
+    final             = dropWhileEnd (== '_') usedInput
   in
-    "/Graph_" ++ usedInput
+    "Graph" ++ final
 
 --------------------
 -- debugging

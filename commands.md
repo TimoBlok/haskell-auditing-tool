@@ -8,7 +8,7 @@
 
 `hpt --help`
 
-`hpt --neo4j --json /path/to/subgraphs/ Main`
+`hpt --neo4j --json /path/to/subgraphs/ --trim --rm Main`
 
 
 # Neo4j
@@ -53,5 +53,11 @@ Find all paths that lead from example-package to a certain node:
 
 ```
 MATCH (decl:Declaration {unit:"example-package"})-[*0..]->(n:Declaration {name:"exampleName"})
+RETURN decl
+```
+
+```
+MATCH (decl:Declaration)-[*0..]->(n:Declaration)
+where n.unit =~ "example-pack.*"
 RETURN decl
 ```

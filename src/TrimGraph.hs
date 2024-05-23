@@ -7,6 +7,7 @@ import qualified Algebra.Graph.AdjacencyMap as AdjMap
 import qualified Algebra.Graph.AdjacencyMap.Algorithm as Alg
 import Data.Set (Set)
 import qualified Data.Set as Set
+import qualified Data.Tree as Tree
 import GHC.List (foldl')
 
 import Dependency
@@ -16,24 +17,31 @@ type Blacklist = Set Declaration
 type RelevantNodes = Set Declaration
 
 trimGraph :: Options -> DependencyGraph -> DependencyGraph
-trimGraph Options {trim = False} = id
-trimGraph options = removeSomeLoops . trimFromRoots . trimFromTargets 
+trimGraph Options {trim = False} depgraph = depgraph
+trimGraph options depGraph = removeSomeLoops . trimWithMiddleUnits . trimFromRoots . trimFromTargets . removeSomeLoops $ depGraph
   where 
     trimFromTargets :: DependencyGraph -> DependencyGraph
     trimFromTargets depGraph' = 
-      let 
-        blacklist = Set.filter (\d -> declIsIO d && isTargetDecl d) $ AdjMap.vertexSet depGraph'
-      in 
+      let
+        blacklist = getDeclsWithPredicate (\d -> declIsIO d && isTargetDecl d) depGraph'
+      in
         keepRelevantNodes blacklist depGraph'
 
     trimFromRoots :: DependencyGraph -> DependencyGraph
     trimFromRoots depGraph' = 
       let 
-        rootDecls = filter isRootDecl $ AdjMap.vertexList depGraph'
-        forest    = Alg.bfsForest depGraph' rootDecls
-        whitelist = AdjMap.vertexSet $ AdjMap.forest forest
+        rootDecls = getDeclsWithPredicate isRootDecl depGraph'
+        --forest    = Alg.bfsForest depGraph' rootDecls
+        whitelist = Set.fromList $ concatMap (Alg.reachable depGraph') rootDecls --AdjMap.vertexSet $ AdjMap.forest forest
       in 
         trimDepGraphWithWhitelist whitelist depGraph'
+
+    trimWithMiddleUnits :: DependencyGraph -> DependencyGraph
+    trimWithMiddleUnits depGraph' | null options.middleUnits = depGraph'
+                                  | otherwise = trimDepGraphWithWhitelist declsFromAndToMiddleUnits depGraph'
+
+    getDeclsWithPredicate :: (Declaration -> Bool) -> DependencyGraph -> Set Declaration
+    getDeclsWithPredicate p = Set.filter p . AdjMap.vertexSet
 
     -- decl is part of specified module or unit, 
     -- decl is one of the queries, 
@@ -50,9 +58,31 @@ trimGraph options = removeSomeLoops . trimFromRoots . trimFromTargets
     -- decl is either part of specified module or unit, or no target was specified
     isTargetDecl :: Declaration -> Bool
     isTargetDecl decl = 
-      decl.declUnitId     `elem` options.targetUnits   || 
-      decl.declModuleName `elem` options.targetModules || 
+      decl.declUnitId     `elem` options.targetUnits       || 
+      decl.declModuleName `elem` options.targetModules     ||
       (null options.targetUnits && null options.targetUnits)
+
+    declsFromAndToMiddleUnits :: Set Declaration
+    declsFromAndToMiddleUnits = dependenciesOfMiddleUnits depGraph `Set.union` dependenciesOfMiddleUnits (AdjMap.transpose depGraph)
+    
+    dependenciesOfMiddleUnits :: DependencyGraph -> Set Declaration
+    dependenciesOfMiddleUnits depGraph' = 
+      let 
+        middleDecls = Set.toList $ getDeclsWithPredicate (\d -> d.declUnitId `elem` options.middleUnits) depGraph'
+      in 
+        Set.fromList $ concatMap Tree.flatten $ Alg.bfsForest depGraph' middleDecls
+
+-- removeDictArgs :: DependencyGraph -> DependencyGraph
+-- removeDictArgs depGraph = 
+--   let 
+--     isDictArg = (== "$f") . take 2 . declOccName
+
+--     removeAndStitch :: (Declaration, Declaration) -> [(Declaration, Declaration)]     
+--     removeAndStitch (decl1,decl2) | isDictArg decl1 = concatMap removeAndStitch $ zip (Set.toList $ AdjMap.preSet decl1 depGraph) (repeat decl2)
+--                                   | isDictArg decl2 = concatMap removeAndStitch $ zip (repeat decl1) (Set.toList $ AdjMap.preSet decl1 depGraph)
+--                                   | otherwise       = [(decl1,decl2)]
+--   in 
+--     AdjMap.edges $ concatMap removeAndStitch $ AdjMap.edgeList depGraph 
 
 -- removes the loops of 1 node and loops of 2 nodes
 removeSomeLoops :: DependencyGraph -> DependencyGraph

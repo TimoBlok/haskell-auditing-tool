@@ -2,13 +2,15 @@
 module Plugin.AnalysisPlugin (plugin) where
 
 import GHC.Plugins
-    ( Plugin(installCoreToDos),
+    ( Plugin(..),
       Outputable(..),
       GenModule(moduleName, moduleUnit),
       Module,
+      purePlugin,
       defaultSDocContext,
       showSDocOneLine,
       putMsgS,
+      putMsg,
       defaultPlugin,
       liftIO,
       CoreM,
@@ -20,15 +22,15 @@ import Control.Monad ( forM_ )
 import Data.List ( init, dropWhileEnd, takeWhile )
 import Data.Char ( isDigit )
 
-import Core ( getDependenciesFromCoreBinds ) 
+import Core ( getDependenciesFromCoreBinds ) --, getTopVars ) 
 import Json ( encodeFile )
 import ReadableHelper 
 
 
 plugin :: Plugin
 plugin = defaultPlugin {
-  installCoreToDos = install
-  }
+  installCoreToDos = install,
+  pluginRecompile = purePlugin}
 
 install :: [CommandLineOption] -> [CoreToDo] -> CoreM [CoreToDo]
 install [absolutePath] todo = do 
@@ -42,6 +44,7 @@ pass :: FilePath -> ModGuts -> CoreM ModGuts
 pass absolutePath guts = do
       -- read the core binds
   let dependencies = getDependenciesFromCoreBinds guts.mg_module guts.mg_binds
+  --putMsg $ ppr $ getTopVars guts.mg_binds
 
       -- create filepath
   let fileName = modNameU guts.mg_module

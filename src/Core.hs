@@ -5,6 +5,7 @@
 -- | Responsible for handling everything related to core specific information, using CoreBinds
 module Core (
     getDependenciesFromCoreBinds,
+    getTopVars
 ) where
 
 
@@ -18,12 +19,12 @@ import Data.Maybe ( isJust, fromMaybe )
 import Data.Set (Set)
 import Data.Set qualified as Set
 import GHC.Builtin.Names (ioTyConName)
-import GHC.Core (Alt (..), Bind (..), CoreBind, Expr (..))
+import GHC.Core (Alt (..), Bind (..), CoreBind, Expr (..), CoreExpr)
 import GHC.Core.Type (Var(..), splitTyConApp_maybe, splitForAllTyCoVars, splitFunTys)
 import GHC.Core.TyCon (tyConName)
 import GHC.Core.TyCo.Rep (Type)
 import GHC.Generics (Generic)
-import GHC.Types.Name (Name, OccName (occNameFS), nameModule_maybe, nameOccName)
+import GHC.Types.Name (Name, OccName (occNameFS), nameModule_maybe, nameOccName, getOccName)
 import GHC.Types.Name.Occurrence (occNameString)
 import GHC.Types.Var (varName, idDetails)
 import GHC.Types.Id.Info (IdDetails (..))
@@ -31,7 +32,7 @@ import GHC.Unit (moduleNameFS)
 import GHC.Unit.Module (Module, moduleUnitId, moduleNameString)
 import GHC.Unit.Types (GenModule (moduleName), UnitId (..), unitIdString)
 import GHC.Data.FastString (unconsFS, unpackFS)
-import GHC.Utils.Outputable (Outputable (ppr), defaultSDocContext, hcat, showSDocOneLine)
+import GHC.Utils.Outputable (Outputable (ppr), defaultSDocContext, hcat, showSDocOneLine, showSDocUnsafe)
 
 import Dependency ( Declaration(..), DependencyGraph )
 import ReadableHelper
@@ -47,7 +48,7 @@ reduceDependencies = AdjMap.induce isValuable
         not (isNameIgnored decl.declOccName)
 
     -- has to do with kinds
-    isKrep =  (== "$krep") . take 5
+    isKrep = (== "$krep") . take 5
     
     -- var that starts with '$tc' and '$tr' doesn't seem relevant
     isNameIgnored =  (\n -> n == "$tc" || n == "$tr") . take 3
@@ -88,11 +89,11 @@ getDependenciesFromCore genModule topVars coreBind = case coreBind of
         Just varGenModule -> varGenModule /= genModule
         Nothing -> False
 
-    getExprDeps :: Expr Var -> [Declaration]
+    getExprDeps :: CoreExpr -> [Declaration]
     getExprDeps = \case
         Var var
             | -- Only track external or top level vars
-              isExternalVar var || var `Set.member` topVars ->
+              isExternalVar var || var `Set.member` topVars || isFFICall var ->
                 [varDecl genModule var]
             | -- And ignore local or shadow vars
               otherwise ->
@@ -136,7 +137,8 @@ mkDecl genModule name declIsIO = Declaration {declUnitId, declModuleName, declOc
   where
     declUnitId = pkgNameH genModule
     declModuleName = modNameH genModule
-    declOccName = occNameString (nameOccName name)
+    declOccName = pps name --occNameString (nameOccName name)
+    -- short term fix ^ pps adds a unique suffix, might want to add a unique as attribute later
 
 isFFICall :: Var -> Bool 
 isFFICall var | (FCallId _) <- idDetails var = True
@@ -157,3 +159,17 @@ findResType ty
   | (tyCoVars@(_:_), resTy)    <- splitForAllTyCoVars ty = findResType resTy
   | (scaledTypes@(_:_), resTy) <- splitFunTys ty         = findResType resTy
   | otherwise                                            = ty
+
+-- instance Show IdDetails where 
+--   show VanillaId = "VanillaId"
+--   show RecSelId {} = "RecSelId"
+--   show (DataConWorkId _) = "DataConWorkId"
+--   show (DataConWrapId _) = "DataConWrapId"
+--   show (ClassOpId _ _) = "ClassOpId"
+--   show (PrimOpId _ _) = "PrimOpId"
+--   show (FCallId _) = "FCallId"
+--   show (TickBoxOpId _) = "TickBoxOpId"
+--   show (DFunId _) = "DFunId"
+--   show CoVarId = "CoVarId"
+--   show (JoinId _ _) = " JoinId"
+--   show (WorkerLikeId _) = " WorkerLikeId"

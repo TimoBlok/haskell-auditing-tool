@@ -18,6 +18,7 @@ data Options = Options {
     rootUnits       :: [String],
     targetModules   :: [String],
     targetUnits     :: [String],
+    middleUnits     :: [String],
     query           :: [String]}
 
 getOpts :: IO Options
@@ -64,38 +65,33 @@ parseOpts = Options
         <>  help "Whether the graph is trimmed based on specified roots, targets, or queries"
         <>  showDefault
         )
-    <*> option auto
-        (   long "rm's"
+    <*> many (strOption 
+        (   long "rm"
         <>  metavar "ROOTMODULES"
         <>  help "output will only consider the part of the graph that start at one of these modules"
-        <>  showDefault
-        <>  value []
-        ) 
-    <*> option auto
-        (   long "ru's"
+        )) 
+    <*> many (strOption 
+        (   long "ru"
         <>  metavar "ROOTUNITS"
         <>  help "output will only consider the part of the graph that start at one of these units"
-        <>  showDefault
-        <>  value []
-        ) 
-    <*> option auto
-        (   long "tm's"
+        )) 
+    <*> many (strOption 
+        (   long "tm"
         <>  metavar "TARGETMODULES"
         <>  help "output will only consider the part of the graph that end at one of these modules"
-        <>  showDefault
-        <>  value []
-        ) 
-    <*> option auto
-        (   long "tu's"
+        )) 
+    <*> many (strOption 
+        (   long "tu"
         <>  metavar "TARGETUNITS"
         <>  help "output will only consider the part of the graph that end at one of these units"
-        <>  showDefault
-        <>  value []
-        ) 
-    <*> option auto
+        )) 
+    <*> many (strOption 
+        (   long "mu"
+        <>  metavar "MIDDLEUNITS"
+        <>  help "output will only consider the part of the graph that go through one of these units"
+        )) 
+    <*> many (strOption 
         (   long "query"
         <>  metavar "QUERY"
         <>  help "Get estimated permissions required by given declarations. In the form of: unit.Module1.Module2.occname"
-        <>  showDefault
-        <>  value []
-        ) 
+        )) 
