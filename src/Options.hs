@@ -14,12 +14,13 @@ data Options = Options {
     useCypher       :: Bool,
     cypherFile      :: FilePath,
     trim            :: Bool,
+    filterIO        :: Bool,
     rootModules     :: [String],
     rootUnits       :: [String],
     targetModules   :: [String],
     targetUnits     :: [String],
     middleUnits     :: [String],
-    query           :: [String]}
+    queries         :: [String]}
 
 getOpts :: IO Options
 getOpts = execParser ((parseOpts <**> helper) `info` fullDesc)
@@ -65,6 +66,11 @@ parseOpts = Options
         <>  help "Whether the graph is trimmed based on specified roots, targets, or queries"
         <>  showDefault
         )
+    <*> switch
+        (   long "filter-io"
+        <>  help "Whether the graph is trimmed based on whether the path ends in IO (including ffi)"
+        <>  showDefault
+        )
     <*> many (strOption 
         (   long "rm"
         <>  metavar "ROOTMODULES"
@@ -93,5 +99,5 @@ parseOpts = Options
     <*> many (strOption 
         (   long "query"
         <>  metavar "QUERY"
-        <>  help "Get estimated permissions required by given declarations. In the form of: unit.Module1.Module2.occname"
+        <>  help "Get estimated permissions required by given declarations. In the form of: example-unit:Module1.Module2:occname"
         )) 

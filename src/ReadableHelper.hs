@@ -33,5 +33,8 @@ modNameH m = pps m.moduleName
 pkgNameU :: Module -> String
 pkgNameU m = pps m.moduleUnit
 
+ffiNameH :: String -> String
+ffiNameH = takeWhile (/= ':') . drop 1 . dropWhile (/= ':')
+
 pps :: Outputable a => a -> String
 pps = showSDocOneLine defaultSDocContext . ppr

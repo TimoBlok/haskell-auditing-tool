@@ -41,7 +41,8 @@ collectDependencies :: FilePath -> IO DependencyGraph
 collectDependencies fp = do
   files <- listDirectory fp
 
-  let jsonFiles = filter isJsonFile files
+  let isJsonFile fp = hasExtension fp && ((== ".json") . map toLower . takeExtension) fp
+      jsonFiles     = filter isJsonFile files
 
   when (null jsonFiles) $ error "no json files found"
 
@@ -54,5 +55,3 @@ collectDependencies fp = do
       --print subGraphs
       let depGraph = foldr AdjMap.overlay mempty subGraphs
       return depGraph
-  where
-    isJsonFile fp = hasExtension fp && ((== ".json") . map toLower . takeExtension) fp

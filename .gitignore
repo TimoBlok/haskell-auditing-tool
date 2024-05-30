@@ -5,3 +5,4 @@ dist-newstyle/
 test/
 src/Main
 .vscode/
+*notes*

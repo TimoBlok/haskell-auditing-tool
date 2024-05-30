@@ -11,6 +11,8 @@ import GHC.Utils.Outputable (Outputable (ppr), defaultSDocContext, hcat, showSDo
 
 import GHC.Generics ( Generic )
 
+import ReadableHelper ( pps )
+
 -- | DependencyGraph (aka the call graph)
 type DependencyGraph = AdjacencyMap Declaration
 
@@ -21,7 +23,7 @@ data Declaration = Declaration
     , declUnitId :: String
     , declOccName :: String
     , declIsIO :: Bool
-    } deriving (Generic, Eq)
+    } deriving (Generic)
 
 type UnitString = String
 type ModuleString = String
@@ -40,7 +42,13 @@ instance Outputable Declaration where
         hcat [text decl.declUnitId, "." ,text decl.declModuleName, ".", text decl.declOccName]
 
 instance Show Declaration where
-    show = showSDocOneLine defaultSDocContext . ppr
+    show = pps
+
+    
+instance Eq Declaration where
+  d1 == d2 = d1.declModuleName == d2.declModuleName ||
+             d1.declUnitId == d2.declUnitId || 
+             d1.declOccName == d2.declOccName
 
 instance Ord Declaration where
     compare d1 d2 =

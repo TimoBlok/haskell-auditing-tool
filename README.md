@@ -1,17 +1,15 @@
 
 # `haskell-permission-tool` - analyse function dependencies in Haskell source code
 
+Tested with GHC-9.4.8
+
 ## Usage
 
-### Generate `.hi` files with simplified core
+### Enable plugin
 
-Use the GHC option `-fwrite-simplified-core-info`. This requires ghc version >= 9.6.2.
+GHC allows a user to enable a plugin with the `-fplugin` flag, which lets te user list the module containing the plugin. This is easily done in a .cabal file. Here, you only need to make sure you add the plugin package to the `build depends` section. The problem with this however, is that this will only apply the plugin on `local` packages, but in order to get a full picture of what the program is doing, you might want to run it on the projects `external` dependencies as well. Luckily, we can do this with a `cabal.project` file.
 
-This adds an extra section to the `.hi` files that we need to analyse dependencies.
-
-Please also use the option `-O0`, which turns off optimisation, preserving function names and structure.
-
-IMPORTANT: make sure you add this option inside a cabal.project file. Only then will it also rebuild the projects build dependencies with this flag.
+However, using a `cabal.project` file for plugins is slightly less straight forward. This is because we will have to talk directly with ghc, instead of letting cabal solve were to find the plugin. This means we have to bring the plugin in scope ourselves. This requires us to state the package database (folder of installed packages), and then which package the plugin resides in, using the flags `-package-db` and `-plugin-package` respectively.
 
 Example cabal.project file
 
@@ -20,49 +18,91 @@ packages:
   .
 
 package *
-  ghc-options: -fwrite-if-simplified-core -O0 
+  ghc-options: 
+    -package-db /global/path/to/cabal/store/ghc-version/package.db/
+    -plugin-package=haskell-permission-tool
+    -fplugin=Plugin.AnalysisPlugin
+    -fplugin-opt=Plugin.AnalysisPlugin:/global/path/to/outputfolder
 ```
 
-### Generate `environment` files
+The plugin expects a directory as input using the `-fplugin-opt` flag, this will be where the plugin outputs all the subgraphs data in json files.
 
-If you want to analyse any of your own modules, you must setup your `.cabal` file such that it contains a lirary with the module you'd like to analyze.
+# Commands
 
-Use the cabal option `--write-ghc-environment-files=always`
+## Installing and running hpt
 
-example command: `cabal build exe:example-project --write-ghc-environment-files=always`
+Installing the Plugin: `cabal install --lib lib:haskell-permission-tool --force-reinstall`
 
-### Process `.hi` files with `haskell-permission-tool` and `nix`
+Installing the Executable: `cabal install hpt --overwrite-policy=always`
 
-See `nix run github:TimoBlok/haskell-permission-tool#ghc962  -- --help`
+## using hpt
 
-or `cabal run haskell-permission-tool -- --help`
+`hpt --help`
 
-## Troubleshooting
+using neo4j and trimming to just include paths eminating from the main module:
 
-### "hi file versions don't match" error
+`hpt --neo4j --json /path/to/subgraphs/ --trim --rm Main`
 
-`haskell-permission-tool` must be compiled and ran with the same GHC version that generated the simplified core.
+using hpt to track differences in IO permissions
+`hpt --json /path/to/subgraphs/ --trim --filter-io --query some-package:Data.Module1:function`
 
-Update the `#ghcXXX` part of your `nix build` or `nix run` invocation.
+this outputs a text file, and if you run this command everytime you build and there is a difference, you might want to check it out
 
-Or set a differenc ghc version using `ghcup`.
 
-### `nix run .#ghcXXX` is slow for some values of `XXX`
+## Installing and running neo4j with nix
 
-For versions of GHC without packages cached online in nixpkgs, `nix` must recompile all the Haskell depndencies of `haskell-permission-tool` from scratch.
+```
+NEO4J_HOME=$(mktemp -d) nix run nixpkgs#neo4j --impure console
+```
 
-You can pre-compile a batch of several versions with `nix build .#ghcXXX .#ghcYYY .#ghcZZZ ...`
+```
+nix run nixpkgs#firefox
+```
 
-After this completes, `nix run` will be instant for those versions.
+## Example Cypher queries
 
-## Development
+To find the subgraph below a certain declaration:
 
-`nix build .#ghcXXX` type-checks & compiles with GHC version XXX
+```
+MATCH (_:Declaration {name:"exampleFunction"})-[*0..]->(decl) 
+RETURN decl
+```
+
+Or you can be more specific of course:
+
+
+```
+MATCH (saveP:Declaration {name:"exampleFunction", module:"ExampleModule", unit:"example-package"})-[*0..]->(decl) 
+RETURN decl
+```
+
+If you only want to know which permissions a certain declaration needs (aka the leaves below that declaration):
+
+
+```
+MATCH (saveP:Declaration {name:"exampleFunction", module:"ExampleModule", unit:"example-package"})-[*0..]->(decl)
+WHERE Not (decl)-->() 
+RETURN decl
+```
+
+Find all paths that lead from example-package to a certain node:
+
+```
+MATCH (decl:Declaration {unit:"example-package"})-[*0..]->(n:Declaration {name:"exampleName"})
+RETURN decl
+```
+
+```
+MATCH (decl:Declaration)-[*0..]->(n:Declaration)
+where n.unit =~ "example-pack.*"
+RETURN decl
+```
 
 ## Related
 
-- Parts of this project are heavily inpsired by [cabal-audit](https://github.com/TristanCacqueray/cabal-audit/tree/main)
-- GHC module [GHC.IfaceToCore](https://hackage.haskell.org/package/ghc-9.6.1/docs/GHC-IfaceToCore.html)
+- Parts of the code base are inpsired by [cabal-audit](https://github.com/TristanCacqueray/cabal-audit/tree/main)
+- [calligraphy](https://hackage.haskell.org/package/calligraphy)
+- [graph-trace](https://hackage.haskell.org/package/graph-trace)
 
 ## Special thanks
 

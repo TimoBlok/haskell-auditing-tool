@@ -26,7 +26,8 @@ trimGraph options depGraph = removeSomeLoops . trimWithMiddleUnits . trimFromRoo
     trimFromTargets :: DependencyGraph -> DependencyGraph
     trimFromTargets depGraph' = 
       let
-        blacklist = getDeclsWithPredicate (\d -> declIsIO d && isTargetDecl d) depGraph'
+        filterOnIO d = declIsIO d || not options.filterIO -- <=> (option.filterIO => declIsIO)
+        blacklist = getDeclsWithPredicate (\d -> filterOnIO d && isTargetDecl d) depGraph'
       in
         keepRelevantNodes blacklist depGraph'
 
@@ -34,8 +35,7 @@ trimGraph options depGraph = removeSomeLoops . trimWithMiddleUnits . trimFromRoo
     trimFromRoots depGraph' = 
       let 
         rootDecls = getDeclsWithPredicate isRootDecl depGraph'
-        --forest    = Alg.bfsForest depGraph' rootDecls
-        whitelist = Set.fromList $ concatMap (Alg.reachable depGraph') rootDecls --AdjMap.vertexSet $ AdjMap.forest forest
+        whitelist = Set.fromList $ concatMap (Alg.reachable depGraph') rootDecls
       in 
         trimDepGraphWithWhitelist whitelist depGraph'
 
@@ -49,10 +49,10 @@ trimGraph options depGraph = removeSomeLoops . trimWithMiddleUnits . trimFromRoo
     isRootDecl decl = 
       decl.declUnitId     `elem` options.rootUnits   || 
       decl.declModuleName `elem` options.rootModules ||
-      show decl           `elem` options.query       ||
+      show decl           `elem` options.queries     ||
       (null options.rootUnits   && 
        null options.rootModules &&
-       null options.query)
+       null options.queries)
 
     -- decl is either part of specified module or unit, or no target was specified
     isTargetDecl :: Declaration -> Bool

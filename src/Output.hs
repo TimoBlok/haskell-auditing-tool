@@ -5,23 +5,57 @@
 module Output where
 
 import qualified Algebra.Graph.AdjacencyMap as AdjMap
+import qualified Algebra.Graph.AdjacencyMap.Algorithm as Alg
 import Control.Monad ( unless, forM_, when )
 import Data.List ( intercalate, nub, dropWhileEnd )
 import Data.List.Split ( splitOn )
 import Data.Char ( isAlphaNum )
+import Data.Maybe (fromMaybe)
 
 import Dependency
-    ( Declaration(..), DependencyGraph )
+    ( Declaration(..), DependencyGraph, mkDeclaration)
 import Options ( Options(..) )
+
+type Query = String
 
 outputAnalysis :: Options -> DependencyGraph -> IO ()
 outputAnalysis options depGraph = do
+    handleQueries options depGraph
     handleGraphViz options depGraph
     handleCypher options depGraph
 
+handleQueries :: Options -> DependencyGraph -> IO ()
+handleQueries options depGraph = do
+  unless (null options.queries) $ do
+    putStrLn "Outputting query results"
+    let output = concatMap processQueries options.queries
+    writeFile "query-results.txt" output
+  where
+    processQueries :: Query -> String
+    processQueries q =
+      let
+        decl = parseDecl q
+      in
+        -- {q}: all, reachable, nodes.\n\n
+        ((q ++ ": ") ++). (++ ".\n\n") . intercalate ", " . map show $ Alg.reachable depGraph decl
+
+    parseDecl :: Query -> Declaration
+    parseDecl q = fromMaybe (error "query bad") $ do
+       arg1 <- indexMaybe 0 splitQ
+       arg2 <- indexMaybe 1 splitQ
+       arg3 <- indexMaybe 2 splitQ
+       return $ mkDeclaration arg1 arg2 arg3 False
+      where
+        splitQ = splitOn ":" q
+
+        indexMaybe :: Int -> [a] -> Maybe a
+        indexMaybe i []     = Nothing
+        indexMaybe 0 (x:_)  = Just x
+        indexMaybe i (_:xs) = indexMaybe (i-1) xs
+
 handleGraphViz :: Options -> DependencyGraph -> IO ()
 handleGraphViz options depGraph = do
-  when options.useGraphViz $ do    
+  when options.useGraphViz $ do
     let graphPath = options.graphVizFile ++ personalisedFileName options ++ ".dot"
 
     putStrLn "Outputting graph to: "
@@ -93,9 +127,9 @@ dumpCypher fp depGraph = do
 
 -- generates a file path based on the arguments given to the porgram
 -- /Graph_RootModule1.RootModule2_root-unit1.root_unit2_TargetModule1.TargetModule2_target-unit1.target-unit2
-personalisedFileName :: Options -> FilePath 
-personalisedFileName options = 
-  let  
+personalisedFileName :: Options -> FilePath
+personalisedFileName options =
+  let
     usedRootModules   = intercalate "." $ map (last . splitOn ".") options.rootModules
     usedRootUnits     = intercalate "."  options.rootUnits
     usedTargetModules = intercalate "." $ map (last . splitOn ".") options.targetModules

@@ -137,8 +137,12 @@ mkDecl genModule name declIsIO = Declaration {declUnitId, declModuleName, declOc
   where
     declUnitId = pkgNameH genModule
     declModuleName = modNameH genModule
-    declOccName = pps name --occNameString (nameOccName name)
-    -- short term fix ^ `pps` adds a unique suffix, might want to add a unique as attribute later
+
+    -- filters out irrelevent stuff if it is an ffi call
+    occNameStr = ffiNameH $ occNameString (nameOccName name)
+    declOccName = if take 1 occNameStr == "$" then pps name else occNameStr
+    -- sometimes different variables in core share the same name, `pps` adds a unique suffix
+    -- for example $wccal when doing an ffi call
 
 isFFICall :: Var -> Bool 
 isFFICall var | (FCallId _) <- idDetails var = True
