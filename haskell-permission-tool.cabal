@@ -1,5 +1,5 @@
 cabal-version: 3.6
-version: 1.0.20240530.1
+version: 1.0.20240623.4
 name:       haskell-permission-tool
 synopsis:   
 author:     Timo Blok

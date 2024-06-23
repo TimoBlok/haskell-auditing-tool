@@ -21,12 +21,12 @@ type RelevantNodes = Set Declaration
 
 trimGraph :: Options -> DependencyGraph -> DependencyGraph
 trimGraph Options {trim = False} depgraph = depgraph
-trimGraph options depGraph = removeSomeLoops . trimWithMiddleUnits . trimFromRoots . trimFromTargets . removeSomeLoops $ depGraph
+trimGraph options depGraph =  trimWithMiddleUnits . trimFromRoots . trimFromTargets $ depGraph
   where 
     trimFromTargets :: DependencyGraph -> DependencyGraph
     trimFromTargets depGraph' = 
       let
-        filterOnIO d = declIsIO d || not options.filterIO -- <=> (option.filterIO => declIsIO)
+        filterOnIO d = declIsIO d || not options.filterIO -- <=> (options.filterIO => declIsIO)
         blacklist = getDeclsWithPredicate (\d -> filterOnIO d && isTargetDecl d) depGraph'
       in
         keepRelevantNodes blacklist depGraph'
@@ -59,7 +59,7 @@ trimGraph options depGraph = removeSomeLoops . trimWithMiddleUnits . trimFromRoo
     isTargetDecl decl = 
       decl.declUnitId     `elem` options.targetUnits       || 
       decl.declModuleName `elem` options.targetModules     ||
-      (null options.targetUnits && null options.targetUnits)
+      (null options.targetUnits && null options.targetModules)
     
     -- keep all decls which lay on a path through specified "middleUnits"
     trimWithMiddleUnits :: DependencyGraph -> DependencyGraph
@@ -77,12 +77,14 @@ trimGraph options depGraph = removeSomeLoops . trimWithMiddleUnits . trimFromRoo
       in 
         Set.fromList $ concatMap Tree.flatten $ Alg.bfsForest depGraph' middleDecls
 
+-- SLOW
 -- removes the loops of 1 node and loops of 2 nodes
 removeSomeLoops :: DependencyGraph -> DependencyGraph
 removeSomeLoops depGraph = induceEdges hasLoop1or2 depGraph
   where
+    invDepGraph = AdjMap.transpose depGraph
     hasLoop1or2 edge = hasLoopSize2 edge || hasSelfLoop edge
-    hasLoopSize2 (x,_) = AdjMap.preSet x depGraph == AdjMap.postSet x depGraph
+    hasLoopSize2 (x,_) = AdjMap.postSet x invDepGraph == AdjMap.postSet x depGraph
     hasSelfLoop = uncurry (==)
 
 -- | like induce but on edges

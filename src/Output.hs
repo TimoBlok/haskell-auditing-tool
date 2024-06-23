@@ -6,52 +6,66 @@ module Output where
 
 import qualified Algebra.Graph.AdjacencyMap as AdjMap
 import qualified Algebra.Graph.AdjacencyMap.Algorithm as Alg
+import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import Control.Monad ( unless, forM_, when )
 import Data.List ( intercalate, nub, dropWhileEnd )
 import Data.List.Split ( splitOn )
 import Data.Char ( isAlphaNum )
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, mapMaybe)
 
 import Dependency
-    ( Declaration(..), DependencyGraph, mkDeclaration)
+    ( Declaration(..), DependencyGraph, Dependencies(..), mkDeclaration)
 import Options ( Options(..) )
 
 type Query = String
 
-outputAnalysis :: Options -> DependencyGraph -> IO ()
-outputAnalysis options depGraph = do
-    handleQueries options depGraph
-    handleGraphViz options depGraph
-    handleCypher options depGraph
+outputAnalysis :: Options -> Dependencies -> IO ()
+outputAnalysis options dep = do
+    handleQueries options dep
+    handleGraphViz options dep.graph
+    handleCypher options dep.graph
 
-handleQueries :: Options -> DependencyGraph -> IO ()
-handleQueries options depGraph = do
+handleQueries :: Options -> Dependencies -> IO ()
+handleQueries options dep = do
   unless (null options.queries) $ do
     putStrLn "Outputting query results"
-    let output = concatMap processQueries options.queries
+    let output = concatMap processQuery options.queries
     writeFile "query-results.txt" output
   where
-    processQueries :: Query -> String
-    processQueries q =
+    processQuery :: Query -> String
+    processQuery q =
       let
+        invGraph = AdjMap.transpose dep.graph
         decl = parseDecl q
+        leaves = filter (null . flip AdjMap.postSet dep.graph ) $ Alg.reachable dep.graph decl
+
+        -- leaves with their callers
+        leavesEdges = concatMap (\leaf -> map (,leaf) (Set.toList $ AdjMap.postSet leaf invGraph) ) leaves
+        nrOfRefs = mapMaybe (`Map.lookup` dep.callers) leavesEdges
+        showCallLeafPair (caller, leaf) nrOfRefs = show leaf ++ " was referenced by " ++ show caller ++ " " ++ show nrOfRefs ++ " time(s)."
       in
-        -- {q}: all, reachable, nodes.\n\n
-        ((q ++ ": ") ++). (++ ".\n\n") . intercalate ", " . map show $ Alg.reachable depGraph decl
+        -- {q}: [
+        --    all, 
+        --    reachable, 
+        --    nodes
+        -- ]
+        ((q ++ ": [\n\t") ++) . (++ "\n]\n\n") . intercalate "\n\t" $ zipWith showCallLeafPair leavesEdges nrOfRefs
 
-    parseDecl :: Query -> Declaration
-    parseDecl q = fromMaybe (error "query bad") $ do
-       arg1 <- indexMaybe 0 splitQ
-       arg2 <- indexMaybe 1 splitQ
-       arg3 <- indexMaybe 2 splitQ
-       return $ mkDeclaration arg1 arg2 arg3 False
-      where
-        splitQ = splitOn ":" q
+parseDecl :: Query -> Declaration
+parseDecl q = fromMaybe (error $ "query bad: " ++ q) $ do
+    arg1 <- getArgMaybe 0 
+    arg2 <- getArgMaybe 1 
+    arg3 <- getArgMaybe 2 
+    return $ mkDeclaration arg1 arg2 arg3 undefined
+  where
+    getArgMaybe :: Int -> Maybe String
+    getArgMaybe i = indexMaybe i $ splitOn ":" q
 
-        indexMaybe :: Int -> [a] -> Maybe a
-        indexMaybe i []     = Nothing
-        indexMaybe 0 (x:_)  = Just x
-        indexMaybe i (_:xs) = indexMaybe (i-1) xs
+    indexMaybe :: Int -> [a] -> Maybe a
+    indexMaybe i []     = Nothing
+    indexMaybe 0 (x:_)  = Just x
+    indexMaybe i (_:xs) = indexMaybe (i-1) xs
 
 handleGraphViz :: Options -> DependencyGraph -> IO ()
 handleGraphViz options depGraph = do
@@ -97,9 +111,9 @@ dumpCypher fp depGraph = do
 
     -- note how the values are inside quotes already
     showCypherProps :: Declaration -> String
-    showCypherProps decl = "name:"     ++ quote (map dotToUnderscore decl.declOccName)
-                        ++ ", module:" ++ quote (map dotToUnderscore decl.declModuleName)
-                        ++ ", unit:"   ++ quote (map dotToUnderscore decl.declUnitId)
+    showCypherProps decl = "name:"     ++ quote decl.declOccName
+                        ++ ", module:" ++ quote decl.declModuleName
+                        ++ ", unit:"   ++ quote decl.declUnitId
 
     quote :: String -> String
     quote s | '\'' `elem` s = "\"" ++ s ++ "\""

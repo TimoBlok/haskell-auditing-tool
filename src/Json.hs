@@ -23,8 +23,13 @@ import System.Directory ( listDirectory )
 import System.FilePath ( takeExtension, hasExtension)
 import Data.Char ( toLower )
 import Control.Monad ( forM, when )
+import Data.Foldable (fold)
 
-import Dependency ( Declaration , DependencyGraph)
+import Dependency ( Declaration , DependencyGraph, Dependencies(..))
+
+instance ToJSON Dependencies where 
+    toEncoding = genericToEncoding defaultOptions
+instance FromJSON Dependencies
 
 instance ToJSON (AdjacencyMap Declaration) where
     toEncoding = genericToEncoding defaultOptions
@@ -37,7 +42,7 @@ instance FromJSON Declaration
 instance FromJSONKey Declaration
 
 
-collectDependencies :: FilePath -> IO DependencyGraph
+collectDependencies :: FilePath -> IO Dependencies
 collectDependencies fp = do
   files <- listDirectory fp
 
@@ -52,6 +57,5 @@ collectDependencies fp = do
   case eitherSubgraphs of
     Left e -> error $ show e
     Right subGraphs -> do
-      --print subGraphs
-      let depGraph = foldr AdjMap.overlay mempty subGraphs
+      let depGraph = fold subGraphs
       return depGraph

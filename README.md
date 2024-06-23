@@ -3,6 +3,10 @@
 
 Tested with GHC-9.4.8
 
+## Introduction
+
+This package contains a tool which can be used to generate the call graph of a haskell program. the executable can do some preliminary filtering and can export the graph, for example, to neo4j for fine-grained querying.
+
 ## Usage
 
 ### Enable plugin

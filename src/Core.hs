@@ -34,12 +34,12 @@ import GHC.Unit.Types (GenModule (moduleName), UnitId (..), unitIdString)
 import GHC.Data.FastString (unconsFS, unpackFS)
 import GHC.Utils.Outputable (Outputable (ppr), defaultSDocContext, hcat, showSDocOneLine, showSDocUnsafe)
 
-import Dependency ( Declaration(..), DependencyGraph )
+import Dependency ( Declaration(..), DependencyGraph, Dependencies(..) )
 import ReadableHelper
 
 -- | reduceDependencies tidy up the output a bit.
-reduceDependencies :: DependencyGraph -> DependencyGraph
-reduceDependencies = AdjMap.induce isValuable
+reduceDependencies :: Dependencies -> Dependencies
+reduceDependencies deps = deps {graph= AdjMap.induce isValuable deps.graph}
   where
     isValuable decl =
         -- Ignore useless vars
@@ -48,12 +48,12 @@ reduceDependencies = AdjMap.induce isValuable
 
     -- has to do with kinds
     isKrep = (== "$krep") . take 5
-    
+
     -- var that starts with '$tc' and '$tr' doesn't seem relevant
     isNameIgnored =  (\n -> n == "$tc" || n == "$tr") . take 3
 
 
-getDependenciesFromCoreBinds :: Module -> [CoreBind] -> DependencyGraph
+getDependenciesFromCoreBinds :: Module -> [CoreBind] -> Dependencies
 getDependenciesFromCoreBinds genModule coreBinds =
     reduceDependencies $ foldMap (getDependenciesFromCore genModule topVars) coreBinds
   where
@@ -71,14 +71,18 @@ getTopVars = go mempty
              in go (Set.union recVars acc) rest
 
 -- | Process a 'CoreBind' into a 'DependencyGraph'
-getDependenciesFromCore :: Module -> Set Var -> CoreBind -> DependencyGraph
+getDependenciesFromCore :: Module -> Set Var -> CoreBind -> Dependencies
 getDependenciesFromCore genModule topVars coreBind = case coreBind of
 
     NonRec b expr ->
       let decl = mkDecl genModule (varName b) $ hasIOResultType b
           deps = getExprDeps expr
         in
-          AdjMap.star decl deps
+          Dependencies {
+            graph = AdjMap.star decl deps,
+            callers = foldr (\dep -> Map.insertWith (+) (decl,dep) 1) mempty deps
+          }
+
 
     Rec xs -> foldMap (getDependenciesFromCore genModule topVars . uncurry NonRec) xs
   where
@@ -144,16 +148,16 @@ mkDecl genModule name declIsIO = Declaration {declUnitId, declModuleName, declOc
     -- sometimes different variables in core share the same name, `pps` adds a unique suffix
     -- for example $wccal when doing an ffi call
 
-isFFICall :: Var -> Bool 
+isFFICall :: Var -> Bool
 isFFICall var | (FCallId _) <- idDetails var = True
               | otherwise                    = False
 
 hasIOResultType :: Var -> Bool
-hasIOResultType var = 
-  let 
+hasIOResultType var =
+  let
     resTy = findResType $ varType var
-  in 
-    case splitTyConApp_maybe resTy of 
+  in
+    case splitTyConApp_maybe resTy of
       Nothing -> False
       Just (tyCon, _) -> tyConName tyCon == ioTyConName
 

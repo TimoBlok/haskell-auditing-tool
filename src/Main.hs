@@ -3,9 +3,11 @@
 -- | Script to analyse function dependency
 module Main where
 
+import Algebra.Graph.AdjacencyMap (vertexCount, edgeCount)
+
 import Options ( Options(..), getOpts )
 import Output ( outputAnalysis ) 
-import Dependency (Declaration(Declaration), mkDeclaration)
+import Dependency (Declaration(Declaration), mkDeclaration, Dependencies(..))
 import Json (collectDependencies)
 import TrimGraph 
 
@@ -19,11 +21,18 @@ main = do
 
     putStrLn "Collecting json files..."
 
-    depGraph <- collectDependencies opts.pathToJsonFiles
+    deps <- collectDependencies opts.pathToJsonFiles
 
     putStrLn "Done!"
 
-    let newGraph = trimGraph opts depGraph
+    putStrLn $ "Found " ++ show (vertexCount deps.graph) ++ " nodes."
+    putStrLn $ "Found " ++ show (edgeCount deps.graph) ++ " edges."
+
+    let newGraph :: Dependencies
+        newGraph = deps {graph = trimGraph opts deps.graph}
+
+    putStrLn $ "Filtered down to " ++ show (vertexCount newGraph.graph) 
+      ++ " nodes and " ++ show (edgeCount newGraph.graph) ++ " edges."
 
     outputAnalysis opts newGraph
 
